@@ -34,6 +34,12 @@
     --ring: 224 71% 4%;
 
     --radius: 0.5rem;
+    
+    /* Editor-specific colors */
+    --editor-bg: 222 47% 11%;
+    --editor-added: 142 70% 20%;
+    --editor-removed: 0 70% 20%;
+    --editor-highlight: 217 70% 20%;
   }
 
   * {
@@ -81,15 +87,15 @@
   }
   
   .diff-added {
-    @apply bg-editor-added;
+    @apply bg-[hsl(var(--editor-added))];
   }
   
   .diff-removed {
-    @apply bg-editor-removed;
+    @apply bg-[hsl(var(--editor-removed))];
   }
   
   .diff-highlight {
-    @apply bg-editor-highlight;
+    @apply bg-[hsl(var(--editor-highlight))];
   }
 
   .diff-added-gutter {

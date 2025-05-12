@@ -8,6 +8,7 @@ import { toast } from "@/components/ui/sonner";
 import CodeAnalysisResults from './CodeAnalysisResults';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { analyzeCode, optimizeCode, AnalysisResult, OptimizationResult } from '@/lib/api';
 
 const CodeOptimizer = () => {
   const [code, setCode] = useState(`function fibonacci(n) {
@@ -19,124 +20,50 @@ for (let i = 0; i < 10; i++) {
   console.log(fibonacci(i));
 }`);
   
-  const [optimizedCode, setOptimizedCode] = useState(`function fibonacci(n) {
-  const memo = new Array(n + 1).fill(0);
-  memo[0] = 0;
-  memo[1] = 1;
-  
-  for (let i = 2; i <= n; i++) {
-    memo[i] = memo[i-1] + memo[i-2];
-  }
-  
-  return memo[n];
-}
-
-for (let i = 0; i < 10; i++) {
-  console.log(fibonacci(i));
-}`);
-
+  const [optimizedCode, setOptimizedCode] = useState('');
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [activeView, setActiveView] = useState<"analysis" | "optimization" | null>(null);
-  const [analysisResults, setAnalysisResults] = useState<any>(null);
+  const [analysisResults, setAnalysisResults] = useState<AnalysisResult | null>(null);
+  const [optimizationResults, setOptimizationResults] = useState<OptimizationResult | null>(null);
 
-  // Create an array of line numbers that have optimizations
-  const diffLines = [0, 1, 2, 3, 4, 5, 6, 7, 8]; // Example lines with changes
-
-  const handleOptimize = () => {
-    setIsOptimizing(true);
-    
-    // Simulate API call to optimize code
-    setTimeout(() => {
-      setIsOptimizing(false);
+  const handleOptimize = async () => {
+    try {
+      setIsOptimizing(true);
+      
+      // Call the API to optimize the code
+      const results = await optimizeCode(code);
+      
+      setOptimizedCode(results.optimizedCode);
+      setOptimizationResults(results);
       setActiveView("optimization");
+      
       toast.success("Code optimized successfully!");
-    }, 2000);
+    } catch (error) {
+      console.error("Optimization failed:", error);
+      toast.error("Failed to optimize code. Please try again.");
+    } finally {
+      setIsOptimizing(false);
+    }
   };
 
-  const handleAnalyze = () => {
-    setIsAnalyzing(true);
-    
-    // Simulate API call to analyze code
-    setTimeout(() => {
-      // Mock analysis results
-      setAnalysisResults({
-        categories: [
-          {
-            name: "CPU Utilization",
-            hasIssues: true,
-            issues: [
-              {
-                title: "Recursive function call causing high CPU usage",
-                location: "Lines 1-4",
-                reason: "Recursive Fibonacci implementation has exponential time complexity O(2^n)",
-                suggestion: "Use dynamic programming or memoization to reduce time complexity to O(n)"
-              }
-            ]
-          },
-          {
-            name: "Memory Usage",
-            hasIssues: true,
-            issues: [
-              {
-                title: "Inefficient memory allocation",
-                location: "Lines 1-4",
-                reason: "Each recursive call allocates new stack frames, leading to potential stack overflow",
-                suggestion: "Implement an iterative solution with constant memory usage"
-              }
-            ]
-          },
-          {
-            name: "Error Handling",
-            hasIssues: false,
-            issues: []
-          },
-          {
-            name: "Data Throughput",
-            hasIssues: false,
-            issues: []
-          },
-          {
-            name: "Model Execution Time",
-            hasIssues: true,
-            issues: [
-              {
-                title: "Slow execution for larger inputs",
-                location: "Lines 1-4",
-                reason: "Exponential growth in execution time as input increases",
-                suggestion: "Implement bottom-up dynamic programming approach"
-              }
-            ]
-          },
-          {
-            name: "Query Optimization",
-            hasIssues: false,
-            issues: []
-          },
-          {
-            name: "Reporting and Visualization Latency",
-            hasIssues: false,
-            issues: []
-          },
-          {
-            name: "Scalability",
-            hasIssues: true,
-            issues: [
-              {
-                title: "Poor scaling with input size",
-                location: "Lines 1-4",
-                reason: "Performance degrades exponentially with input size",
-                suggestion: "Implement an O(n) solution using iteration and memoization"
-              }
-            ]
-          }
-        ]
-      });
+  const handleAnalyze = async () => {
+    try {
+      setIsAnalyzing(true);
       
-      setIsAnalyzing(false);
+      // Call the API to analyze the code
+      const results = await analyzeCode(code);
+      
+      setAnalysisResults(results);
       setActiveView("analysis");
+      
       toast.success("Code analysis completed!");
-    }, 2000);
+    } catch (error) {
+      console.error("Analysis failed:", error);
+      toast.error("Failed to analyze code. Please try again.");
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const handleCopyOptimized = () => {
@@ -245,26 +172,35 @@ for (let i = 0; i < 10; i++) {
             {activeView === "analysis" ? (
               <CodeAnalysisResults results={analysisResults} className="p-2" />
             ) : (
-              <div className="h-[400px] animate-fade-in">
-                <CodeEditor
-                  title="Optimized Code"
-                  code={optimizedCode}
-                  editable={false}
-                  diffLines={diffLines}
-                  diffType="added"
-                  onCopy={handleCopyOptimized}
-                  language="javascript"
-                />
+              <div className="flex flex-col gap-6 animate-fade-in">
+                <div className="h-[400px]">
+                  <CodeEditor
+                    title="Optimized Code"
+                    code={optimizationResults?.optimizedCode || optimizedCode}
+                    editable={false}
+                    diffLines={optimizationResults?.changedLines || []}
+                    diffType="added"
+                    onCopy={handleCopyOptimized}
+                    language="javascript"
+                  />
+                </div>
+                
+                {/* Performance Metrics - Only shown in optimization results */}
+                {optimizationResults && (
+                  <div className="mt-4">
+                    <h2 className="text-xl font-semibold mb-4">Performance Metrics</h2>
+                    <MetricsDashboard 
+                      executionTime={optimizationResults.metrics.executionTime}
+                      memoryUsage={optimizationResults.metrics.memoryUsage}
+                      codeComplexity={optimizationResults.metrics.codeComplexity}
+                    />
+                  </div>
+                )}
               </div>
             )}
           </div>
         </div>
       )}
-
-      <div className="mt-4">
-        <h2 className="text-xl font-semibold mb-4">Performance Metrics</h2>
-        <MetricsDashboard />
-      </div>
     </div>
   );
 };

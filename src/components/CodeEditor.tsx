@@ -50,6 +50,9 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
     if (!editable) {
       editor.updateOptions({ readOnly: true });
     }
+    
+    // Force dark theme
+    monaco.editor.setTheme("vs-dark");
   };
 
   const handleChange = (value: string | undefined) => {
@@ -92,6 +95,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
           value={code}
           onChange={handleChange}
           onMount={handleEditorDidMount}
+          theme="vs-dark" // Always use dark theme
           options={{
             minimap: { enabled: true },
             scrollBeyondLastLine: false,
