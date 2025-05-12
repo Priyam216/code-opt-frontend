@@ -59,6 +59,20 @@
   ::-webkit-scrollbar-thumb:hover {
     background-color: rgba(255, 255, 255, 0.3);
   }
+
+  /* Monaco Editor Styling */
+  .monaco-editor-container {
+    padding: 0 !important;
+  }
+
+  /* Adding custom fonts for editor */
+  @font-face {
+    font-family: 'JetBrains Mono';
+    src: url('https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono/web/woff2/JetBrainsMono-Regular.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+  }
 }
 
 @layer utilities {
@@ -67,14 +81,35 @@
   }
   
   .diff-added {
-    @apply border-l-2 border-green-500 bg-editor-added;
+    @apply bg-editor-added;
   }
   
   .diff-removed {
-    @apply border-l-2 border-red-500 bg-editor-removed;
+    @apply bg-editor-removed;
   }
   
   .diff-highlight {
-    @apply border-l-2 border-blue-500 bg-editor-highlight;
+    @apply bg-editor-highlight;
+  }
+
+  .diff-added-gutter {
+    @apply border-l-2 border-green-500;
+  }
+  
+  .diff-removed-gutter {
+    @apply border-l-2 border-red-500;
+  }
+  
+  .diff-highlight-gutter {
+    @apply border-l-2 border-blue-500;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 }

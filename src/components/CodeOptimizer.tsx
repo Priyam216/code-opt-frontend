@@ -1,11 +1,10 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { Search, Zap, Copy } from "lucide-react";
+import { Search, Zap } from "lucide-react";
 import CodeEditor from './CodeEditor';
 import MetricsDashboard from './MetricsDashboard';
 import { toast } from "@/components/ui/sonner";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import CodeAnalysisResults from './CodeAnalysisResults';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -40,6 +39,9 @@ for (let i = 0; i < 10; i++) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [activeView, setActiveView] = useState<"analysis" | "optimization" | null>(null);
   const [analysisResults, setAnalysisResults] = useState<any>(null);
+
+  // Create an array of line numbers that have optimizations
+  const diffLines = [0, 1, 2, 3, 4, 5, 6, 7, 8]; // Example lines with changes
 
   const handleOptimize = () => {
     setIsOptimizing(true);
@@ -152,6 +154,7 @@ for (let i = 0; i < 10; i++) {
           editable={true}
           onCodeChange={setCode}
           className="h-full"
+          language="javascript"
         />
       </div>
 
@@ -167,7 +170,12 @@ for (let i = 0; i < 10; i++) {
                 disabled={isAnalyzing || !code}
                 className="px-8 transition-all duration-300 min-w-[180px]"
               >
-                {isAnalyzing ? "Analyzing..." : (
+                {isAnalyzing ? (
+                  <span className="flex items-center gap-2">
+                    <div className="h-4 w-4 rounded-full border-2 border-t-transparent border-white animate-spin"></div>
+                    Analyzing...
+                  </span>
+                ) : (
                   <span className="flex items-center gap-2">
                     <Search className="h-4 w-4" />
                     Analyze Code
@@ -187,7 +195,12 @@ for (let i = 0; i < 10; i++) {
           disabled={isOptimizing || !code}
           className="px-8 transition-all duration-300 min-w-[180px]"
         >
-          {isOptimizing ? "Optimizing..." : (
+          {isOptimizing ? (
+            <span className="flex items-center gap-2">
+              <div className="h-4 w-4 rounded-full border-2 border-t-transparent border-white animate-spin"></div>
+              Optimizing...
+            </span>
+          ) : (
             <span className="flex items-center gap-2">
               <Zap className="h-4 w-4" />
               Run Optimization
@@ -198,7 +211,7 @@ for (let i = 0; i < 10; i++) {
 
       {/* Toggle Switch for Results */}
       {activeView && (
-        <div className="mt-2">
+        <div className="mt-2 animate-fade-in">
           <div className="border-b border-border">
             <ToggleGroup 
               type="single" 
@@ -232,23 +245,16 @@ for (let i = 0; i < 10; i++) {
             {activeView === "analysis" ? (
               <CodeAnalysisResults results={analysisResults} className="p-2" />
             ) : (
-              <div className="flex flex-col lg:flex-row gap-6 h-[400px]">
-                <div className="flex-1 h-full">
-                  <CodeEditor
-                    title="Original Code"
-                    code={code}
-                    editable={false}
-                  />
-                </div>
-                <div className="flex-1 h-full">
-                  <CodeEditor
-                    title="Optimized Code"
-                    code={optimizedCode}
-                    diffLines={[1, 2, 3, 4, 5, 6, 7, 8]}
-                    diffType="added"
-                    onCopy={handleCopyOptimized}
-                  />
-                </div>
+              <div className="h-[400px] animate-fade-in">
+                <CodeEditor
+                  title="Optimized Code"
+                  code={optimizedCode}
+                  editable={false}
+                  diffLines={diffLines}
+                  diffType="added"
+                  onCopy={handleCopyOptimized}
+                  language="javascript"
+                />
               </div>
             )}
           </div>

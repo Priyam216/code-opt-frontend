@@ -1,5 +1,6 @@
 
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
+import Editor, { Monaco } from '@monaco-editor/react';
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
 
@@ -12,6 +13,7 @@ interface CodeEditorProps {
   onCodeChange?: (code: string) => void;
   onCopy?: () => void;
   className?: string;
+  language?: string;
 }
 
 const CodeEditor: React.FC<CodeEditorProps> = ({
@@ -23,22 +25,48 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   onCodeChange,
   onCopy,
   className = "",
+  language = "javascript",
 }) => {
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    if (onCodeChange) {
-      onCodeChange(e.target.value);
+  const editorRef = useRef<any>(null);
+
+  const handleEditorDidMount = (editor: any, monaco: Monaco) => {
+    editorRef.current = editor;
+    
+    // Apply decorations for diff lines if needed
+    if (diffLines.length > 0 && diffType) {
+      const decorations = diffLines.map(lineIndex => ({
+        range: new monaco.Range(lineIndex + 1, 1, lineIndex + 1, 1),
+        options: {
+          isWholeLine: true,
+          className: `diff-${diffType}`,
+          linesDecorationsClassName: `diff-${diffType}-gutter`,
+        }
+      }));
+      
+      editor.createDecorationsCollection(decorations);
+    }
+    
+    // Handle read-only state
+    if (!editable) {
+      editor.updateOptions({ readOnly: true });
+    }
+  };
+
+  const handleChange = (value: string | undefined) => {
+    if (onCodeChange && value !== undefined) {
+      onCodeChange(value);
     }
   };
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(code);
-    if (onCopy) {
-      onCopy();
+    if (editorRef.current) {
+      const code = editorRef.current.getValue();
+      navigator.clipboard.writeText(code);
+      if (onCopy) {
+        onCopy();
+      }
     }
   };
-
-  // Create an array of code lines with line numbers
-  const codeLines = code.split('\n');
   
   return (
     <div className={`flex flex-col h-full bg-editor-bg rounded-md border border-border shadow-md ${className}`}>
@@ -57,36 +85,28 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
         </div>
       </div>
       <div className="relative flex-grow overflow-hidden">
-        <div className="absolute inset-0 flex h-full">
-          <div className="flex-none py-2 px-2 text-right text-xs text-muted-foreground bg-editor-bg border-r border-border w-[40px]">
-            {codeLines.map((_, i) => (
-              <div key={`line-${i}`} className="h-6">{i + 1}</div>
-            ))}
-          </div>
-          <div className="flex-grow overflow-auto">
-            {editable ? (
-              <textarea
-                value={code}
-                onChange={handleChange}
-                className="font-mono text-sm w-full h-full bg-editor-bg text-foreground p-2 resize-none outline-none"
-                spellCheck={false}
-              />
-            ) : (
-              <pre className="font-mono text-sm p-0 m-0 h-full">
-                <code>
-                  {codeLines.map((line, i) => (
-                    <div
-                      key={`code-${i}`}
-                      className={`code-line h-6 ${diffLines.includes(i) ? `diff-${diffType}` : ''}`}
-                    >
-                      {line || ' '}
-                    </div>
-                  ))}
-                </code>
-              </pre>
-            )}
-          </div>
-        </div>
+        <Editor
+          height="100%"
+          defaultLanguage={language}
+          defaultValue={code}
+          value={code}
+          onChange={handleChange}
+          onMount={handleEditorDidMount}
+          options={{
+            minimap: { enabled: true },
+            scrollBeyondLastLine: false,
+            fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+            fontSize: 13,
+            lineNumbers: "on",
+            folding: true,
+            suggest: { showMethods: true },
+            wordWrap: "on",
+            theme: "vs-dark",
+            bracketPairColorization: { enabled: true },
+            automaticLayout: true,
+          }}
+          className="monaco-editor-container"
+        />
       </div>
     </div>
   );
