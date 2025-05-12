@@ -1,15 +1,17 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
+import { Search, Zap, Copy } from "lucide-react";
 import CodeEditor from './CodeEditor';
 import MetricsDashboard from './MetricsDashboard';
 import { toast } from "@/components/ui/sonner";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import CodeAnalysisResults from './CodeAnalysisResults';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 const CodeOptimizer = () => {
-  const [originalCode, setOriginalCode] = useState(`function fibonacci(n) {
+  const [code, setCode] = useState(`function fibonacci(n) {
   if (n <= 1) return n;
   return fibonacci(n-1) + fibonacci(n-2);
 }
@@ -36,7 +38,7 @@ for (let i = 0; i < 10; i++) {
 
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [showAnalysisResults, setShowAnalysisResults] = useState(false);
+  const [activeView, setActiveView] = useState<"analysis" | "optimization" | null>(null);
   const [analysisResults, setAnalysisResults] = useState<any>(null);
 
   const handleOptimize = () => {
@@ -45,6 +47,7 @@ for (let i = 0; i < 10; i++) {
     // Simulate API call to optimize code
     setTimeout(() => {
       setIsOptimizing(false);
+      setActiveView("optimization");
       toast.success("Code optimized successfully!");
     }, 2000);
   };
@@ -129,48 +132,47 @@ for (let i = 0; i < 10; i++) {
       });
       
       setIsAnalyzing(false);
-      setShowAnalysisResults(true);
+      setActiveView("analysis");
       toast.success("Code analysis completed!");
     }, 2000);
   };
 
   const handleCopyOptimized = () => {
+    navigator.clipboard.writeText(optimizedCode);
     toast.success("Optimized code copied to clipboard!");
   };
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col lg:flex-row gap-6 h-[500px]">
-        <div className="flex-1 h-full">
-          <CodeEditor
-            title="Original Code"
-            code={originalCode}
-            editable={true}
-            onCodeChange={setOriginalCode}
-          />
-        </div>
-        <div className="flex-1 h-full">
-          <CodeEditor
-            title="Optimized Code"
-            code={optimizedCode}
-            diffLines={[1, 2, 3, 4, 5, 6, 7, 8]}
-            diffType="added"
-            onCopy={handleCopyOptimized}
-          />
-        </div>
+      {/* Full-size VS Code-like Editor */}
+      <div className="h-[500px] w-full">
+        <CodeEditor
+          title="Code Editor"
+          code={code}
+          editable={true}
+          onCodeChange={setCode}
+          className="h-full"
+        />
       </div>
 
-      <div className="flex justify-center gap-4">
+      {/* Action Buttons */}
+      <div className="flex flex-wrap justify-center gap-4">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button 
                 size="lg" 
+                variant="secondary"
                 onClick={handleAnalyze} 
-                disabled={isAnalyzing || !originalCode}
-                className="px-8 bg-secondary text-secondary-foreground hover:bg-secondary/90 transition-all duration-300"
+                disabled={isAnalyzing || !code}
+                className="px-8 transition-all duration-300 min-w-[180px]"
               >
-                {isAnalyzing ? "Analyzing..." : "Analyze Code"}
+                {isAnalyzing ? "Analyzing..." : (
+                  <span className="flex items-center gap-2">
+                    <Search className="h-4 w-4" />
+                    Analyze Code
+                  </span>
+                )}
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="bg-popover border-border">
@@ -182,23 +184,81 @@ for (let i = 0; i < 10; i++) {
         <Button 
           size="lg" 
           onClick={handleOptimize} 
-          disabled={isOptimizing || !originalCode}
-          className="px-8 transition-all duration-300"
+          disabled={isOptimizing || !code}
+          className="px-8 transition-all duration-300 min-w-[180px]"
         >
-          {isOptimizing ? "Optimizing..." : "Run Optimization"}
+          {isOptimizing ? "Optimizing..." : (
+            <span className="flex items-center gap-2">
+              <Zap className="h-4 w-4" />
+              Run Optimization
+            </span>
+          )}
         </Button>
       </div>
+
+      {/* Toggle Switch for Results */}
+      {activeView && (
+        <div className="mt-2">
+          <div className="border-b border-border">
+            <ToggleGroup 
+              type="single" 
+              value={activeView} 
+              onValueChange={(value) => {
+                if (value) setActiveView(value as "analysis" | "optimization");
+              }}
+              className="justify-start w-full"
+            >
+              <ToggleGroupItem 
+                value="analysis" 
+                className={`px-6 py-3 rounded-none transition-all border-b-2 ${activeView === 'analysis' 
+                  ? 'border-primary text-primary' 
+                  : 'border-transparent text-muted-foreground'}`}
+              >
+                Analysis Results
+              </ToggleGroupItem>
+              <ToggleGroupItem 
+                value="optimization" 
+                className={`px-6 py-3 rounded-none transition-all border-b-2 ${activeView === 'optimization' 
+                  ? 'border-primary text-primary' 
+                  : 'border-transparent text-muted-foreground'}`}
+              >
+                Optimization Results
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+
+          {/* Results Content */}
+          <div className="mt-6">
+            {activeView === "analysis" ? (
+              <CodeAnalysisResults results={analysisResults} className="p-2" />
+            ) : (
+              <div className="flex flex-col lg:flex-row gap-6 h-[400px]">
+                <div className="flex-1 h-full">
+                  <CodeEditor
+                    title="Original Code"
+                    code={code}
+                    editable={false}
+                  />
+                </div>
+                <div className="flex-1 h-full">
+                  <CodeEditor
+                    title="Optimized Code"
+                    code={optimizedCode}
+                    diffLines={[1, 2, 3, 4, 5, 6, 7, 8]}
+                    diffType="added"
+                    onCopy={handleCopyOptimized}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="mt-4">
         <h2 className="text-xl font-semibold mb-4">Performance Metrics</h2>
         <MetricsDashboard />
       </div>
-
-      <Dialog open={showAnalysisResults} onOpenChange={setShowAnalysisResults}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-          <CodeAnalysisResults results={analysisResults} />
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

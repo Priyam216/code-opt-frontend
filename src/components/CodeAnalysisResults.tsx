@@ -26,29 +26,23 @@ interface CodeAnalysisResultsProps {
   results: {
     categories: AnalysisCategory[];
   } | null;
+  className?: string;
 }
 
-const CodeAnalysisResults: React.FC<CodeAnalysisResultsProps> = ({ results }) => {
+const CodeAnalysisResults: React.FC<CodeAnalysisResultsProps> = ({ results, className = "" }) => {
   if (!results) {
-    return <div className="p-4">No analysis results available</div>;
+    return <div className={`p-4 ${className}`}>No analysis results available</div>;
   }
 
   const { categories } = results;
   
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h2 className="text-2xl font-bold tracking-tight">Code Analysis Results</h2>
-        <p className="text-muted-foreground">
-          We've analyzed your code and identified potential optimization opportunities.
-        </p>
-      </div>
-      
+    <div className={`space-y-6 ${className} animate-fade-in`}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {categories.map((category, index) => (
           <Card 
             key={index} 
-            className={`border ${category.hasIssues ? 'border-amber-700/30 bg-amber-950/10' : 'border-border'} transition-all duration-300`}
+            className={`border ${category.hasIssues ? 'border-amber-700/30 bg-amber-950/10' : 'border-border'} transition-all duration-300 hover:shadow-md`}
           >
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">

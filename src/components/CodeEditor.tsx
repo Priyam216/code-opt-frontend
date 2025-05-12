@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Copy } from "lucide-react";
 
 interface CodeEditorProps {
@@ -12,6 +11,7 @@ interface CodeEditorProps {
   diffType?: 'added' | 'removed' | 'highlight';
   onCodeChange?: (code: string) => void;
   onCopy?: () => void;
+  className?: string;
 }
 
 const CodeEditor: React.FC<CodeEditorProps> = ({
@@ -22,6 +22,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   diffType,
   onCodeChange,
   onCopy,
+  className = "",
 }) => {
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (onCodeChange) {
@@ -40,15 +41,16 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   const codeLines = code.split('\n');
   
   return (
-    <div className="flex flex-col h-full bg-editor-bg rounded-md">
-      <div className="flex items-center justify-between px-4 py-2 border-b border-border">
-        <h3 className="text-sm font-medium">{title}</h3>
+    <div className={`flex flex-col h-full bg-editor-bg rounded-md border border-border shadow-md ${className}`}>
+      <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-muted/40">
+        <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
         <div className="flex items-center space-x-2">
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={handleCopy}
-            className="h-8 w-8"
+            className="h-8 w-8 hover:bg-muted/50"
+            title="Copy code"
           >
             <Copy className="h-4 w-4" />
           </Button>
@@ -67,6 +69,7 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
                 value={code}
                 onChange={handleChange}
                 className="font-mono text-sm w-full h-full bg-editor-bg text-foreground p-2 resize-none outline-none"
+                spellCheck={false}
               />
             ) : (
               <pre className="font-mono text-sm p-0 m-0 h-full">
