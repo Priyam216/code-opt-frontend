@@ -21,7 +21,6 @@ const FunctionalityAnalysis = ({ content }: FunctionalityAnalysisProps) => {
             code={content}
             language="markdown"
             editable={false}
-            readOnly={true}
             title=""
             className="h-full"
           />
