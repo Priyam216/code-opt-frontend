@@ -57,7 +57,6 @@ const ScoreCard = ({
                 style={{ 
                   backgroundColor: `rgba(${color}, 0.2)`,
                 }}
-                // Using css classes for styling the indicator
                 indicatorClassName={`bg-[rgb(${color})]`}
               />
             </CardContent>
