@@ -1,9 +1,24 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Badge } from '@/components/ui/badge';
 import { CircleHelp } from 'lucide-react';
+
+// Define ScoreData interface
+interface ScoreData {
+  overall_score: number;
+  scores?: {
+    maintainability: { score: number; explanation: string };
+    performance_efficiency: { score: number; explanation: string };
+    readability: { score: number; explanation: string };
+    security_vulnerability: { score: number; explanation: string };
+    test_coverage: { score: number; explanation: string };
+    [key: string]: { score: number; explanation: string }; // Allow other category keys
+  };
+  summary?: string;
+}
 
 interface ScoreCardDisplayProps {
   scores: ScoreData;
@@ -115,7 +130,6 @@ const ScoreCardDisplay = ({ scores }: ScoreCardDisplayProps) => {
           value={overall * 10} 
           className="h-2 w-48"
           style={{ backgroundColor: `rgba(${colors.overall}, 0.2)` }}
-          // Using css classes for styling the indicator
           indicatorClassName={`bg-[rgb(${colors.overall})]`}
         />
       </div>
@@ -123,14 +137,20 @@ const ScoreCardDisplay = ({ scores }: ScoreCardDisplayProps) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {Object.entries(categories).map(([key, category]) => {
           // Skip if not a valid category or missing data
-          if (!categoryDisplayNames[key] || !category.score) return null;
+          if (!categoryDisplayNames[key] || !category || typeof category !== 'object') return null;
+          
+          // Safely access properties with type checking
+          const score = 'score' in category && typeof category.score === 'number' ? category.score : 0;
+          const explanation = 'explanation' in category && typeof category.explanation === 'string' 
+            ? category.explanation 
+            : '';
           
           return (
             <ScoreCard 
               key={key}
               title={categoryDisplayNames[key]} 
-              score={category.score} 
-              explanation={category.explanation}
+              score={score} 
+              explanation={explanation}
               color={colors[key as keyof typeof colors] || colors.overall}
             />
           );
