@@ -7,6 +7,51 @@
 // Types for API responses
 export interface AnalysisResult {
   categories: AnalysisCategory[];
+  detectedLanguage: LanguageInfo;
+  workflow?: WorkflowData;
+  scores?: ScoreData;
+  functionalityAnalysis?: string;
+}
+
+export interface LanguageInfo {
+  name: string;
+  confidence: number;
+  color: string;
+}
+
+export interface WorkflowData {
+  nodes: WorkflowNode[];
+  edges: WorkflowEdge[];
+  optimizableSteps: string[];
+}
+
+export interface WorkflowNode {
+  id: string;
+  label: string;
+  type: string;
+}
+
+export interface WorkflowEdge {
+  id: string;
+  source: string;
+  target: string;
+  label?: string;
+}
+
+export interface ScoreData {
+  overall: number;
+  categories: {
+    maintainability: ScoreCategory;
+    performance: ScoreCategory;
+    readability: ScoreCategory;
+    security: ScoreCategory;
+    testCoverage: ScoreCategory;
+  };
+}
+
+export interface ScoreCategory {
+  score: number;
+  explanation: string;
 }
 
 export interface AnalysisCategory {
@@ -71,6 +116,57 @@ export const analyzeCode = async (code: string): Promise<AnalysisResult> => {
   await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate network delay
   
   return {
+    detectedLanguage: {
+      name: "JavaScript",
+      confidence: 0.95,
+      color: "#f7df1e"
+    },
+    workflow: {
+      nodes: [
+        { id: "1", label: "Function Entry", type: "entry" },
+        { id: "2", label: "Check Base Cases", type: "conditional" },
+        { id: "3", label: "Return Base Result", type: "return" },
+        { id: "4", label: "Recursive Call 1", type: "function" },
+        { id: "5", label: "Recursive Call 2", type: "function" },
+        { id: "6", label: "Sum Results", type: "operation" },
+        { id: "7", label: "Return Result", type: "return" }
+      ],
+      edges: [
+        { id: "e1-2", source: "1", target: "2" },
+        { id: "e2-3", source: "2", target: "3", label: "n <= 1" },
+        { id: "e2-4", source: "2", target: "4", label: "n > 1" },
+        { id: "e4-5", source: "4", target: "5" },
+        { id: "e5-6", source: "5", target: "6" },
+        { id: "e6-7", source: "6", target: "7" }
+      ],
+      optimizableSteps: ["4", "5"]
+    },
+    scores: {
+      overall: 6.2,
+      categories: {
+        maintainability: {
+          score: 7.5,
+          explanation: "The code is well-structured but has room for improvement with more comments"
+        },
+        performance: {
+          score: 3.0,
+          explanation: "Recursive algorithm leads to exponential time complexity"
+        },
+        readability: {
+          score: 8.0,
+          explanation: "Variable names are clear, but lacks documentation"
+        },
+        security: {
+          score: 9.0,
+          explanation: "No obvious security vulnerabilities found"
+        },
+        testCoverage: {
+          score: 4.0,
+          explanation: "No test cases found in the provided code"
+        }
+      }
+    },
+    functionalityAnalysis: "## Functionality Analysis\n\nThis code implements a recursive Fibonacci algorithm which:\n\n1. Takes an input parameter `n`\n2. Returns directly for base cases (n ≤ 1)\n3. For other cases, recursively computes `fibonacci(n-1) + fibonacci(n-2)`\n\n### Time Complexity\n\nThe current implementation has **O(2^n)** time complexity due to redundant calculations.\n\n```javascript\nfunction fibonacci(n) {\n  if (n <= 1) return n;\n  return fibonacci(n-1) + fibonacci(n-2); // Exponential growth\n}\n```\n\nCan be optimized to **O(n)** using dynamic programming or memoization.",
     categories: [
       {
         name: "CPU Utilization",
