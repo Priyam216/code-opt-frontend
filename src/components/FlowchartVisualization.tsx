@@ -1,6 +1,7 @@
 
 import React, { useCallback } from 'react';
-import ReactFlow, {
+import {
+  ReactFlow,
   Background,
   Controls,
   MiniMap,
@@ -212,6 +213,12 @@ const WorkflowChart = ({ flowchart, workflow }: FlowchartVisualizationProps) => 
         edges={edges}
         nodeTypes={nodeTypes}
         fitView
+        defaultEdgeOptions={{
+          type: 'smoothstep',
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+          },
+        }}
       >
         <FlowchartControls />
         <Background color="#444" gap={16} />
