@@ -44,6 +44,7 @@ const ScoreCard = ({
                 style={{ 
                   backgroundColor: `rgba(${color}, 0.2)`,
                 }}
+                // Using css classes for styling the indicator
                 indicatorClassName={`bg-[rgb(${color})]`}
               />
             </CardContent>
@@ -61,7 +62,7 @@ const ScoreCardDisplay = ({ scores }: ScoreCardDisplayProps) => {
   if (!scores) return null;
 
   // Handle both old and new data structures
-  const overall = scores.overall_score || scores.overall || 0;
+  const overall = scores.overall_score || 0;
   const categories = scores.scores || {
     maintainability: { score: 0, explanation: "" },
     performance_efficiency: { score: 0, explanation: "" },
@@ -116,6 +117,7 @@ const ScoreCardDisplay = ({ scores }: ScoreCardDisplayProps) => {
           value={overall * 10} 
           className="h-2 w-48"
           style={{ backgroundColor: `rgba(${colors.overall}, 0.2)` }}
+          // Using css classes for styling the indicator
           indicatorClassName={`bg-[rgb(${colors.overall})]`}
         />
       </div>

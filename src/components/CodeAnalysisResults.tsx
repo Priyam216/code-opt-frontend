@@ -202,7 +202,7 @@ const CodeAnalysisResults: React.FC<CodeAnalysisResultsProps> = ({ results, clas
       )}
 
       {/* Functionality Analysis */}
-      {(functionality_analysis || results.functionalityAnalysis) && (
+      {functionality_analysis && (
         <Collapsible open={openSections.functionality} onOpenChange={() => toggleSection('functionality')} className="w-full">
           <div className="flex justify-between items-center mb-2">
             <h3 className="text-sm font-medium">Functionality Analysis</h3>
@@ -213,7 +213,7 @@ const CodeAnalysisResults: React.FC<CodeAnalysisResultsProps> = ({ results, clas
             </CollapsibleTrigger>
           </div>
           <CollapsibleContent className="transition-all duration-300">
-            <FunctionalityAnalysis content={functionality_analysis || results.functionalityAnalysis || ""} />
+            <FunctionalityAnalysis content={functionality_analysis || ""} />
           </CollapsibleContent>
         </Collapsible>
       )}
