@@ -11,12 +11,12 @@ const FunctionalityAnalysis = ({ content }: FunctionalityAnalysisProps) => {
   if (!content) return null;
   
   return (
-    <Card className="overflow-hidden border border-border bg-card/50">
+    <Card className="overflow-hidden border border-border bg-card/50 transition-all duration-300 hover:shadow-md">
       <CardHeader className="py-3 px-4">
         <CardTitle className="text-sm font-medium">Functionality Analysis</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="h-[300px]">
+        <div className="h-[300px] animate-fade-in">
           <CodeEditor
             code={content}
             language="markdown"

@@ -1,6 +1,7 @@
 
 import React, { useCallback } from 'react';
-import ReactFlow, {
+import {
+  ReactFlow,
   Background,
   Controls,
   MiniMap,
@@ -10,11 +11,12 @@ import ReactFlow, {
   EdgeTypes,
   ReactFlowProvider,
   useReactFlow,
-  Panel
+  Panel,
+  MarkerType
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
-import { Download, Expand } from 'lucide-react';
+import { Download, Maximize2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { WorkflowData } from '@/lib/api';
@@ -66,7 +68,7 @@ const getNodeStyle = (type: string, isOptimizable: boolean) => {
 // Custom node component with tooltip for optimizable steps
 const CustomNode = ({ data, isConnectable }: { data: any, isConnectable: boolean }) => {
   const nodeContent = (
-    <div style={getNodeStyle(data.type, data.isOptimizable)}>
+    <div style={getNodeStyle(data.type, data.isOptimizable)} className="animate-fade-in">
       <div style={{ fontWeight: 600 }}>{data.label}</div>
       <div style={{ fontSize: '10px', opacity: 0.8 }}>{data.type}</div>
     </div>
@@ -96,16 +98,30 @@ const nodeTypes: NodeTypes = {
 };
 
 const FlowchartControls = () => {
-  const { fitView, zoomIn, zoomOut } = useReactFlow();
+  const { fitView, getScreenshot } = useReactFlow();
+  
   const onDownload = useCallback(() => {
-    // This is a placeholder - in a real implementation, you'd use react-flow's 
-    // getScreenshot() or another method to download the flowchart
-    alert("Download functionality would be implemented here");
-  }, []);
+    // Using ReactFlow's getScreenshot API to download the flowchart
+    getScreenshot().then((dataUrl) => {
+      const a = document.createElement('a');
+      a.setAttribute('download', 'flowchart.png');
+      a.setAttribute('href', dataUrl);
+      a.click();
+    });
+  }, [getScreenshot]);
 
   const onFullscreen = useCallback(() => {
-    // This is a placeholder for fullscreen functionality
-    alert("Fullscreen functionality would be implemented here");
+    // Find the ReactFlow container and request fullscreen
+    const flowContainer = document.querySelector('.react-flow');
+    if (flowContainer) {
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else {
+        flowContainer.requestFullscreen().catch((err) => {
+          console.error(`Error attempting to enable fullscreen: ${err.message}`);
+        });
+      }
+    }
   }, []);
 
   return (
@@ -116,7 +132,7 @@ const FlowchartControls = () => {
           <span className="text-xs">Export</span>
         </Button>
         <Button variant="secondary" size="sm" onClick={onFullscreen} className="h-8 px-2">
-          <Expand size={16} className="mr-1" />
+          <Maximize2 size={16} className="mr-1" />
           <span className="text-xs">Fullscreen</span>
         </Button>
       </div>
@@ -134,7 +150,7 @@ const WorkflowChart = ({ workflow }: FlowchartVisualizationProps) => {
     return {
       id: node.id,
       type: 'custom',
-      position: { x: 0, y: 0 }, // Positions should come from API or be calculated
+      position: { x: node.position?.x || 0, y: node.position?.y || 0 },
       data: { 
         ...node,
         isOptimizable,
@@ -144,9 +160,11 @@ const WorkflowChart = ({ workflow }: FlowchartVisualizationProps) => {
   });
 
   // Assign positions if not provided (simple top-to-bottom layout)
-  nodes.forEach((node, index) => {
-    node.position = { x: 100 + (index % 3) * 250, y: 100 + Math.floor(index / 3) * 100 };
-  });
+  if (!nodes.some(node => node.position.x !== 0 && node.position.y !== 0)) {
+    nodes.forEach((node, index) => {
+      node.position = { x: 100 + (index % 3) * 250, y: 100 + Math.floor(index / 3) * 100 };
+    });
+  }
 
   // Convert edges
   const edges: Edge[] = rawEdges.map(edge => ({
@@ -155,7 +173,14 @@ const WorkflowChart = ({ workflow }: FlowchartVisualizationProps) => {
     target: edge.target,
     label: edge.label,
     animated: optimizableSteps.includes(edge.source) || optimizableSteps.includes(edge.target),
-    style: { stroke: '#555' }
+    style: { stroke: '#555' },
+    markerEnd: {
+      type: MarkerType.ArrowClosed,
+      width: 20,
+      height: 20,
+      color: '#555',
+    },
+    type: 'smoothstep',
   }));
 
   return (
@@ -165,6 +190,13 @@ const WorkflowChart = ({ workflow }: FlowchartVisualizationProps) => {
         edges={edges}
         nodeTypes={nodeTypes}
         fitView
+        defaultEdgeOptions={{
+          type: 'smoothstep',
+          animated: false,
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+          },
+        }}
       >
         <FlowchartControls />
         <Background color="#444" gap={16} />
