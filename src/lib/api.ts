@@ -1,4 +1,3 @@
-
 /**
  * API service for code analysis and optimization
  * This file contains mock API endpoints that can be replaced with real backend calls
@@ -6,11 +5,14 @@
 
 // Types for API responses
 export interface AnalysisResult {
-  categories: AnalysisCategory[];
-  detectedLanguage: LanguageInfo;
-  workflow?: WorkflowData;
+  flowchart?: FlowchartData;
+  functionality_analysis?: string;
+  language?: string;
   scores?: ScoreData;
-  functionalityAnalysis?: string;
+  status: string;
+  categories?: AnalysisCategory[]; // Keeping for backward compatibility
+  detectedLanguage?: LanguageInfo; // Keeping for backward compatibility
+  workflow?: WorkflowData; // Keeping for backward compatibility
 }
 
 export interface LanguageInfo {
@@ -19,6 +21,7 @@ export interface LanguageInfo {
   color: string;
 }
 
+// Legacy workflow data structure (keeping for backward compatibility)
 export interface WorkflowData {
   nodes: WorkflowNode[];
   edges: WorkflowEdge[];
@@ -38,15 +41,38 @@ export interface WorkflowEdge {
   label?: string;
 }
 
+// New flowchart data structure
+export interface FlowchartData {
+  steps: FlowchartNode[];
+  dependencies: FlowchartEdge[];
+  optimizable_steps: OptimizableStep[];
+}
+
+export interface FlowchartNode {
+  id: string;
+  label: string;
+}
+
+export interface FlowchartEdge {
+  from: string;
+  to: string;
+}
+
+export interface OptimizableStep {
+  id: string;
+  reason: string;
+}
+
 export interface ScoreData {
-  overall: number;
-  categories: {
+  overall_score: number;
+  scores: {
     maintainability: ScoreCategory;
-    performance: ScoreCategory;
+    performance_efficiency: ScoreCategory;
     readability: ScoreCategory;
-    security: ScoreCategory;
-    testCoverage: ScoreCategory;
+    security_vulnerability: ScoreCategory;
+    test_coverage: ScoreCategory;
   };
+  summary: string;
 }
 
 export interface ScoreCategory {
@@ -116,127 +142,69 @@ export const analyzeCode = async (code: string): Promise<AnalysisResult> => {
   await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate network delay
   
   return {
-    detectedLanguage: {
-      name: "JavaScript",
-      confidence: 0.95,
-      color: "#f7df1e"
-    },
-    workflow: {
-      nodes: [
-        { id: "1", label: "Function Entry", type: "entry" },
-        { id: "2", label: "Check Base Cases", type: "conditional" },
-        { id: "3", label: "Return Base Result", type: "return" },
-        { id: "4", label: "Recursive Call 1", type: "function" },
-        { id: "5", label: "Recursive Call 2", type: "function" },
-        { id: "6", label: "Sum Results", type: "operation" },
-        { id: "7", label: "Return Result", type: "return" }
+    status: "success",
+    language: "r",
+    flowchart: {
+      steps: [
+        { id: "1", label: "Define factorial function" },
+        { id: "2", label: "Check if n is 0 or 1" },
+        { id: "3", label: "Return 1 if n is 0 or 1" },
+        { id: "4", label: "Initialize result to 1" },
+        { id: "5", label: "Start loop from 2 to n" },
+        { id: "6", label: "Multiply result by current loop value" },
+        { id: "7", label: "Return final result" },
+        { id: "8", label: "Call factorial function with argument 5" },
+        { id: "9", label: "Print the result" }
       ],
-      edges: [
-        { id: "e1-2", source: "1", target: "2" },
-        { id: "e2-3", source: "2", target: "3", label: "n <= 1" },
-        { id: "e2-4", source: "2", target: "4", label: "n > 1" },
-        { id: "e4-5", source: "4", target: "5" },
-        { id: "e5-6", source: "5", target: "6" },
-        { id: "e6-7", source: "6", target: "7" }
+      dependencies: [
+        { from: "1", to: "2" },
+        { from: "2", to: "3" },
+        { from: "2", to: "4" },
+        { from: "4", to: "5" },
+        { from: "5", to: "6" },
+        { from: "6", to: "5" },
+        { from: "5", to: "7" },
+        { from: "1", to: "8" },
+        { from: "8", to: "9" }
       ],
-      optimizableSteps: ["4", "5"]
+      optimizable_steps: [
+        { id: "5", reason: "The loop can be replaced with a more efficient vectorized operation in R" },
+        { id: "6", reason: "Multiplication inside the loop can be vectorized for better performance" }
+      ]
     },
+    functionality_analysis: "# R Code Analysis: Factorial Function\n\n## Overall Purpose and Functionality\n\nThis R code defines a function called `factorial` that calculates the factorial of a given non-negative integer. The factorial of a number n (denoted as n!) is the product of all positive integers from 1 to n. The code also includes a line to print the result of calling this function with the argument 5.\n\n## Key Features and Implementation Details\n\n1. **Function Definition**: The code defines a function named `factorial` that takes one parameter `n`.\n\n2. **Base Cases**: \n   - The function first checks for base cases: if `n` is 0 or 1, it returns 1, as 0! and 1! are both defined as 1.\n\n3. **Iterative Calculation**:\n   - For input greater than 1, the function uses a `for` loop to calculate the factorial.\n   - It initializes `result` to 1 and then multiplies it by each integer from 2 to n.\n\n4. **Return Value**: The function returns the calculated factorial.\n\n5. **Function Call**: After the function definition, there's a line to print the result of `factorial(5)`.\n\n## Usage Patterns and Intended Use Cases\n\n- This function is designed to calculate factorials for non-negative integers.\n- It can be used in various mathematical and statistical computations where factorials are required.\n- The function call `factorial(5)` demonstrates how to use the function and print its result.\n\n## Code Structure and Organization\n\n1. **Function Definition**: \n   - The code starts with the function definition, encapsulating the factorial calculation logic.\n\n2. **Conditional Logic**: \n   - Uses an if-else statement to handle base cases and the general case separately.\n\n3. **Loop Structure**: \n   - Employs a for loop for the iterative multiplication process.\n\n4. **Function Usage**: \n   - Demonstrates the function's usage with a simple print statement.\n\n## Notable Programming Paradigms or Patterns\n\n1. **Procedural Programming**: \n   - The code follows a procedural approach, with a clear sequence of steps to calculate the factorial.\n\n2. **Iterative Approach**: \n   - Uses iteration (for loop) instead of recursion to calculate the factorial, which can be more efficient for larger numbers and avoids potential stack overflow issues.\n\n3. **Functional Programming Element**: \n   - While not purely functional, the code defines a function that takes an input and returns an output without modifying any external state.\n\n4. **Defensive Programming**: \n   - The function handles base cases (0 and 1) separately, showing a level of input validation and edge case handling.\n\nIn conclusion, this code provides a straightforward and efficient implementation of the factorial function in R, suitable for educational purposes and basic mathematical computations involving factorials.",
     scores: {
-      overall: 6.2,
-      categories: {
+      overall_score: 6.6,
+      scores: {
         maintainability: {
-          score: 7.5,
-          explanation: "The code is well-structured but has room for improvement with more comments"
+          explanation: "The code structure is simple and easy to modify. However, it lacks comments explaining the logic.",
+          score: 7
         },
-        performance: {
-          score: 3.0,
-          explanation: "Recursive algorithm leads to exponential time complexity"
+        performance_efficiency: {
+          explanation: "The iterative approach is less efficient than a recursive or built-in function for larger numbers.",
+          score: 6
         },
         readability: {
-          score: 8.0,
-          explanation: "Variable names are clear, but lacks documentation"
+          explanation: "The code is concise and uses clear variable names. The function name accurately describes its purpose.",
+          score: 8
         },
-        security: {
-          score: 9.0,
-          explanation: "No obvious security vulnerabilities found"
+        security_vulnerability: {
+          explanation: "The code doesn't involve external inputs or sensitive operations, making it relatively secure.",
+          score: 9
         },
-        testCoverage: {
-          score: 4.0,
-          explanation: "No test cases found in the provided code"
+        test_coverage: {
+          explanation: "There's only one test case (factorial(5)). It lacks comprehensive testing for edge cases and different inputs.",
+          score: 3
         }
-      }
+      },
+      summary: "The code is readable and straightforward but could benefit from better performance optimization, more comprehensive testing, and additional comments for improved maintainability."
     },
-    functionalityAnalysis: "## Functionality Analysis\n\nThis code implements a recursive Fibonacci algorithm which:\n\n1. Takes an input parameter `n`\n2. Returns directly for base cases (n ≤ 1)\n3. For other cases, recursively computes `fibonacci(n-1) + fibonacci(n-2)`\n\n### Time Complexity\n\nThe current implementation has **O(2^n)** time complexity due to redundant calculations.\n\n```javascript\nfunction fibonacci(n) {\n  if (n <= 1) return n;\n  return fibonacci(n-1) + fibonacci(n-2); // Exponential growth\n}\n```\n\nCan be optimized to **O(n)** using dynamic programming or memoization.",
-    categories: [
-      {
-        name: "CPU Utilization",
-        hasIssues: true,
-        issues: [
-          {
-            title: "Recursive function call causing high CPU usage",
-            location: "Lines 1-4",
-            reason: "Recursive Fibonacci implementation has exponential time complexity O(2^n)",
-            suggestion: "Use dynamic programming or memoization to reduce time complexity to O(n)"
-          }
-        ]
-      },
-      {
-        name: "Memory Usage",
-        hasIssues: true,
-        issues: [
-          {
-            title: "Inefficient memory allocation",
-            location: "Lines 1-4",
-            reason: "Each recursive call allocates new stack frames, leading to potential stack overflow",
-            suggestion: "Implement an iterative solution with constant memory usage"
-          }
-        ]
-      },
-      {
-        name: "Error Handling",
-        hasIssues: false,
-        issues: []
-      },
-      {
-        name: "Data Throughput",
-        hasIssues: false,
-        issues: []
-      },
-      {
-        name: "Model Execution Time",
-        hasIssues: true,
-        issues: [
-          {
-            title: "Slow execution for larger inputs",
-            location: "Lines 1-4",
-            reason: "Exponential growth in execution time as input increases",
-            suggestion: "Implement bottom-up dynamic programming approach"
-          }
-        ]
-      },
-      {
-        name: "Query Optimization",
-        hasIssues: false,
-        issues: []
-      },
-      {
-        name: "Reporting and Visualization Latency",
-        hasIssues: false,
-        issues: []
-      },
-      {
-        name: "Scalability",
-        hasIssues: true,
-        issues: [
-          {
-            title: "Poor scaling with input size",
-            location: "Lines 1-4",
-            reason: "Performance degrades exponentially with input size",
-            suggestion: "Implement an O(n) solution using iteration and memoization"
-          }
-        ]
-      }
-    ]
+    // Legacy mock data for backward compatibility
+    detectedLanguage: {
+      name: "R",
+      confidence: 0.95,
+      color: "#276dc3"
+    }
   };
 };
 
@@ -267,21 +235,14 @@ export const optimizeCode = async (code: string): Promise<OptimizationResult> =>
   await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate network delay
   
   return {
-    optimizedCode: `function fibonacci(n) {
-  const memo = new Array(n + 1).fill(0);
-  memo[0] = 0;
-  memo[1] = 1;
-  
-  for (let i = 2; i <= n; i++) {
-    memo[i] = memo[i-1] + memo[i-2];
-  }
-  
-  return memo[n];
+    optimizedCode: `# Optimized factorial function with vectorization
+factorial <- function(n) {
+  if (n <= 1) return(1)
+  # Using prod() for vectorized multiplication
+  return(prod(2:n))
 }
 
-for (let i = 0; i < 10; i++) {
-  console.log(fibonacci(i));
-}`,
+print(factorial(5))`,
     metrics: {
       executionTime: {
         value: 42,

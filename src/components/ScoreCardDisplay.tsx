@@ -60,16 +60,39 @@ const ScoreCard = ({
 const ScoreCardDisplay = ({ scores }: ScoreCardDisplayProps) => {
   if (!scores) return null;
 
-  const { overall, categories } = scores;
+  // Handle both old and new data structures
+  const overall = scores.overall_score || scores.overall || 0;
+  const categories = scores.scores || {
+    maintainability: { score: 0, explanation: "" },
+    performance_efficiency: { score: 0, explanation: "" },
+    readability: { score: 0, explanation: "" },
+    security_vulnerability: { score: 0, explanation: "" },
+    test_coverage: { score: 0, explanation: "" }
+  };
+
+  // Map category keys to display names
+  const categoryDisplayNames: Record<string, string> = {
+    maintainability: "Maintainability",
+    performance_efficiency: "Performance",
+    readability: "Readability",
+    security_vulnerability: "Security",
+    test_coverage: "Test Coverage",
+    performance: "Performance", // For backward compatibility
+    security: "Security", // For backward compatibility
+    testCoverage: "Test Coverage" // For backward compatibility
+  };
 
   // Color mappings (RGB values)
   const colors = {
     overall: "59, 130, 246",
     maintainability: "99, 102, 241",
-    performance: "236, 72, 153",
+    performance_efficiency: "236, 72, 153",
+    performance: "236, 72, 153", // For backward compatibility
     readability: "16, 185, 129",
-    security: "245, 158, 11",
-    testCoverage: "124, 58, 237"
+    security_vulnerability: "245, 158, 11",
+    security: "245, 158, 11", // For backward compatibility
+    test_coverage: "124, 58, 237",
+    testCoverage: "124, 58, 237" // For backward compatibility
   };
 
   return (
@@ -98,36 +121,20 @@ const ScoreCardDisplay = ({ scores }: ScoreCardDisplayProps) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <ScoreCard 
-          title="Maintainability" 
-          score={categories.maintainability.score} 
-          explanation={categories.maintainability.explanation}
-          color={colors.maintainability}
-        />
-        <ScoreCard 
-          title="Performance" 
-          score={categories.performance.score} 
-          explanation={categories.performance.explanation}
-          color={colors.performance}
-        />
-        <ScoreCard 
-          title="Readability" 
-          score={categories.readability.score} 
-          explanation={categories.readability.explanation}
-          color={colors.readability}
-        />
-        <ScoreCard 
-          title="Security" 
-          score={categories.security.score} 
-          explanation={categories.security.explanation}
-          color={colors.security}
-        />
-        <ScoreCard 
-          title="Test Coverage" 
-          score={categories.testCoverage.score} 
-          explanation={categories.testCoverage.explanation}
-          color={colors.testCoverage}
-        />
+        {Object.entries(categories).map(([key, category]) => {
+          // Skip if not a valid category or missing data
+          if (!categoryDisplayNames[key] || !category.score) return null;
+          
+          return (
+            <ScoreCard 
+              key={key}
+              title={categoryDisplayNames[key]} 
+              score={category.score} 
+              explanation={category.explanation}
+              color={colors[key as keyof typeof colors] || colors.overall}
+            />
+          );
+        })}
       </div>
     </div>
   );

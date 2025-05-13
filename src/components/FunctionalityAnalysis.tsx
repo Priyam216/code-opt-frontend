@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import CodeEditor from './CodeEditor';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface FunctionalityAnalysisProps {
   content: string;
@@ -15,15 +16,14 @@ const FunctionalityAnalysis = ({ content }: FunctionalityAnalysisProps) => {
       <CardHeader className="py-3 px-4">
         <CardTitle className="text-sm font-medium">Functionality Analysis</CardTitle>
       </CardHeader>
-      <CardContent className="p-0">
-        <div className="h-[300px]">
-          <CodeEditor
-            code={content}
-            language="markdown"
-            editable={false}
-            title=""
-            className="h-full"
-          />
+      <CardContent className="p-4 prose prose-sm prose-invert max-w-none">
+        <div className="h-[300px] overflow-auto">
+          <ReactMarkdown
+            className="markdown-content"
+            remarkPlugins={[remarkGfm]}
+          >
+            {content}
+          </ReactMarkdown>
         </div>
       </CardContent>
     </Card>
