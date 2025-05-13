@@ -1,56 +1,74 @@
 
 import React, { useCallback } from 'react';
-import {
-  ReactFlow,
+import ReactFlow, {
   Background,
   Controls,
   MiniMap,
   Node,
   Edge,
   NodeTypes,
+  EdgeTypes,
   ReactFlowProvider,
   useReactFlow,
-  Panel,
-  MarkerType,
-  Position
+  Panel
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Download, Expand } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { FlowchartData, WorkflowData } from '@/lib/api';
+import { WorkflowData } from '@/lib/api';
 
 interface FlowchartVisualizationProps {
-  flowchart?: FlowchartData;
-  workflow?: WorkflowData; // Legacy support
+  workflow: WorkflowData;
 }
 
-// Custom node styling
-const getNodeStyle = (isOptimizable: boolean) => {
+// Custom node styling based on type
+const getNodeStyle = (type: string, isOptimizable: boolean) => {
   const baseStyle = {
     padding: '10px 15px',
     borderRadius: '8px',
     fontSize: '12px',
     boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
     width: 180,
-    background: 'rgba(66, 153, 225, 0.15)',
-    border: '1.5px solid #4299E1',
   };
+
+  // Add color styling based on node type
+  let typeStyle = {};
+  switch (type) {
+    case 'entry':
+      typeStyle = { background: 'rgba(66, 153, 225, 0.15)', border: '1.5px solid #4299E1' };
+      break;
+    case 'conditional':
+      typeStyle = { background: 'rgba(159, 122, 234, 0.15)', border: '1.5px solid #9F7AEA' };
+      break;
+    case 'function':
+      typeStyle = { background: 'rgba(72, 187, 120, 0.15)', border: '1.5px solid #48BB78' };
+      break;
+    case 'operation':
+      typeStyle = { background: 'rgba(237, 137, 54, 0.15)', border: '1.5px solid #ED8936' };
+      break;
+    case 'return':
+      typeStyle = { background: 'rgba(237, 100, 166, 0.15)', border: '1.5px solid #ED64A6' };
+      break;
+    default:
+      typeStyle = { background: 'rgba(113, 128, 150, 0.15)', border: '1.5px solid #718096' };
+  }
   
   // Add optimizable styling if needed
   const optimizableStyle = isOptimizable
-    ? { border: '1.5px solid rgb(245, 101, 101)', background: 'rgba(245, 101, 101, 0.15)' }
+    ? { boxShadow: '0 0 0 2px rgba(245, 101, 101, 0.5)', borderColor: 'rgb(245, 101, 101)' }
     : {};
 
-  return { ...baseStyle, ...optimizableStyle };
+  return { ...baseStyle, ...typeStyle, ...optimizableStyle };
 };
 
 // Custom node component with tooltip for optimizable steps
 const CustomNode = ({ data, isConnectable }: { data: any, isConnectable: boolean }) => {
   const nodeContent = (
-    <div style={getNodeStyle(data.isOptimizable)}>
+    <div style={getNodeStyle(data.type, data.isOptimizable)}>
       <div style={{ fontWeight: 600 }}>{data.label}</div>
+      <div style={{ fontSize: '10px', opacity: 0.8 }}>{data.type}</div>
     </div>
   );
 
@@ -78,8 +96,7 @@ const nodeTypes: NodeTypes = {
 };
 
 const FlowchartControls = () => {
-  const { fitView } = useReactFlow();
-  
+  const { fitView, zoomIn, zoomOut } = useReactFlow();
   const onDownload = useCallback(() => {
     // This is a placeholder - in a real implementation, you'd use react-flow's 
     // getScreenshot() or another method to download the flowchart
@@ -107,56 +124,12 @@ const FlowchartControls = () => {
   );
 };
 
-// Helper function to convert new flowchart data to ReactFlow format
-const convertFlowchartToReactFlow = (flowchart: FlowchartData): { nodes: Node[], edges: Edge[] } => {
-  // Create a map of optimizable steps for quick lookup
-  const optimizableStepsMap = new Map(
-    flowchart.optimizable_steps.map(step => [step.id, step.reason])
-  );
-  
-  // Convert nodes
-  const nodes: Node[] = flowchart.steps.map((step, index) => {
-    const isOptimizable = optimizableStepsMap.has(step.id);
-    const row = Math.floor(index / 3);
-    const col = index % 3;
-    
-    return {
-      id: step.id,
-      type: 'custom',
-      position: { x: 100 + col * 250, y: 100 + row * 100 },
-      data: {
-        label: step.label,
-        isOptimizable,
-        optimizationReason: optimizableStepsMap.get(step.id) || null,
-      },
-      targetPosition: Position.Left,
-      sourcePosition: Position.Right,
-    };
-  });
-  
-  // Convert edges
-  const edges: Edge[] = flowchart.dependencies.map((dep, index) => ({
-    id: `edge-${dep.from}-${dep.to}`,
-    source: dep.from,
-    target: dep.to,
-    animated: optimizableStepsMap.has(dep.from) || optimizableStepsMap.has(dep.to),
-    style: { stroke: '#555' },
-    markerEnd: {
-      type: MarkerType.ArrowClosed,
-    },
-  }));
-  
-  return { nodes, edges };
-};
+const WorkflowChart = ({ workflow }: FlowchartVisualizationProps) => {
+  const { nodes: rawNodes, edges: rawEdges, optimizableSteps } = workflow;
 
-// Helper function to convert legacy workflow data to ReactFlow format (for backward compatibility)
-const convertWorkflowToReactFlow = (workflow: WorkflowData): { nodes: Node[], edges: Edge[] } => {
-  // Create a set of optimizable steps for quick lookup
-  const optimizableSteps = new Set(workflow.optimizableSteps);
-  
-  // Convert nodes
-  const nodes: Node[] = workflow.nodes.map(node => {
-    const isOptimizable = optimizableSteps.has(node.id);
+  // Convert API data to ReactFlow nodes and edges
+  const nodes: Node[] = rawNodes.map(node => {
+    const isOptimizable = optimizableSteps.includes(node.id);
     
     return {
       id: node.id,
@@ -176,35 +149,14 @@ const convertWorkflowToReactFlow = (workflow: WorkflowData): { nodes: Node[], ed
   });
 
   // Convert edges
-  const edges: Edge[] = workflow.edges.map(edge => ({
+  const edges: Edge[] = rawEdges.map(edge => ({
     id: edge.id,
     source: edge.source,
     target: edge.target,
     label: edge.label,
-    animated: optimizableSteps.has(edge.source) || optimizableSteps.has(edge.target),
-    style: { stroke: '#555' },
-    markerEnd: {
-      type: MarkerType.ArrowClosed,
-    }
+    animated: optimizableSteps.includes(edge.source) || optimizableSteps.includes(edge.target),
+    style: { stroke: '#555' }
   }));
-  
-  return { nodes, edges };
-};
-
-const WorkflowChart = ({ flowchart, workflow }: FlowchartVisualizationProps) => {
-  let nodes: Node[] = [];
-  let edges: Edge[] = [];
-  
-  // Process new format if available, otherwise fall back to legacy format
-  if (flowchart) {
-    const reactFlowData = convertFlowchartToReactFlow(flowchart);
-    nodes = reactFlowData.nodes;
-    edges = reactFlowData.edges;
-  } else if (workflow) {
-    const reactFlowData = convertWorkflowToReactFlow(workflow);
-    nodes = reactFlowData.nodes;
-    edges = reactFlowData.edges;
-  }
 
   return (
     <div style={{ height: 400 }}>
@@ -213,12 +165,6 @@ const WorkflowChart = ({ flowchart, workflow }: FlowchartVisualizationProps) => 
         edges={edges}
         nodeTypes={nodeTypes}
         fitView
-        defaultEdgeOptions={{
-          type: 'smoothstep',
-          markerEnd: {
-            type: MarkerType.ArrowClosed,
-          },
-        }}
       >
         <FlowchartControls />
         <Background color="#444" gap={16} />
@@ -226,7 +172,14 @@ const WorkflowChart = ({ flowchart, workflow }: FlowchartVisualizationProps) => 
         <MiniMap 
           nodeColor={(node) => {
             if (node.data?.isOptimizable) return '#F56565';
-            return '#4299E1';
+            switch (node.data?.type) {
+              case 'entry': return '#4299E1';
+              case 'conditional': return '#9F7AEA';
+              case 'function': return '#48BB78';
+              case 'operation': return '#ED8936';
+              case 'return': return '#ED64A6';
+              default: return '#718096';
+            }
           }} 
           maskColor="rgba(0, 0, 0, 0.2)"
         />
@@ -236,14 +189,14 @@ const WorkflowChart = ({ flowchart, workflow }: FlowchartVisualizationProps) => 
 };
 
 // Wrap with provider to ensure all React Flow hooks work
-const FlowchartVisualization = ({ flowchart, workflow }: FlowchartVisualizationProps) => {
-  if (!flowchart && !workflow) return null;
+const FlowchartVisualization = ({ workflow }: FlowchartVisualizationProps) => {
+  if (!workflow) return null;
   
   return (
     <Card className="mb-6 overflow-hidden border border-border bg-card/50">
       <CardContent className="p-0">
         <ReactFlowProvider>
-          <WorkflowChart flowchart={flowchart} workflow={workflow} />
+          <WorkflowChart workflow={workflow} />
         </ReactFlowProvider>
       </CardContent>
     </Card>

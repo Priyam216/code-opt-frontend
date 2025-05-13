@@ -3,22 +3,9 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { ScoreData } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { CircleHelp } from 'lucide-react';
-
-// Define ScoreData interface
-interface ScoreData {
-  overall_score: number;
-  scores?: {
-    maintainability: { score: number; explanation: string };
-    performance_efficiency: { score: number; explanation: string };
-    readability: { score: number; explanation: string };
-    security_vulnerability: { score: number; explanation: string };
-    test_coverage: { score: number; explanation: string };
-    [key: string]: { score: number; explanation: string }; // Allow other category keys
-  };
-  summary?: string;
-}
 
 interface ScoreCardDisplayProps {
   scores: ScoreData;
@@ -73,39 +60,16 @@ const ScoreCard = ({
 const ScoreCardDisplay = ({ scores }: ScoreCardDisplayProps) => {
   if (!scores) return null;
 
-  // Handle both old and new data structures
-  const overall = scores.overall_score || 0;
-  const categories = scores.scores || {
-    maintainability: { score: 0, explanation: "" },
-    performance_efficiency: { score: 0, explanation: "" },
-    readability: { score: 0, explanation: "" },
-    security_vulnerability: { score: 0, explanation: "" },
-    test_coverage: { score: 0, explanation: "" }
-  };
-
-  // Map category keys to display names
-  const categoryDisplayNames: Record<string, string> = {
-    maintainability: "Maintainability",
-    performance_efficiency: "Performance",
-    readability: "Readability",
-    security_vulnerability: "Security",
-    test_coverage: "Test Coverage",
-    performance: "Performance", // For backward compatibility
-    security: "Security", // For backward compatibility
-    testCoverage: "Test Coverage" // For backward compatibility
-  };
+  const { overall, categories } = scores;
 
   // Color mappings (RGB values)
   const colors = {
     overall: "59, 130, 246",
     maintainability: "99, 102, 241",
-    performance_efficiency: "236, 72, 153",
-    performance: "236, 72, 153", // For backward compatibility
+    performance: "236, 72, 153",
     readability: "16, 185, 129",
-    security_vulnerability: "245, 158, 11",
-    security: "245, 158, 11", // For backward compatibility
-    test_coverage: "124, 58, 237",
-    testCoverage: "124, 58, 237" // For backward compatibility
+    security: "245, 158, 11",
+    testCoverage: "124, 58, 237"
   };
 
   return (
@@ -134,26 +98,36 @@ const ScoreCardDisplay = ({ scores }: ScoreCardDisplayProps) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {Object.entries(categories).map(([key, category]) => {
-          // Skip if not a valid category or missing data
-          if (!categoryDisplayNames[key] || !category || typeof category !== 'object') return null;
-          
-          // Safely access properties with type checking
-          const score = 'score' in category && typeof category.score === 'number' ? category.score : 0;
-          const explanation = 'explanation' in category && typeof category.explanation === 'string' 
-            ? category.explanation 
-            : '';
-          
-          return (
-            <ScoreCard 
-              key={key}
-              title={categoryDisplayNames[key]} 
-              score={score} 
-              explanation={explanation}
-              color={colors[key as keyof typeof colors] || colors.overall}
-            />
-          );
-        })}
+        <ScoreCard 
+          title="Maintainability" 
+          score={categories.maintainability.score} 
+          explanation={categories.maintainability.explanation}
+          color={colors.maintainability}
+        />
+        <ScoreCard 
+          title="Performance" 
+          score={categories.performance.score} 
+          explanation={categories.performance.explanation}
+          color={colors.performance}
+        />
+        <ScoreCard 
+          title="Readability" 
+          score={categories.readability.score} 
+          explanation={categories.readability.explanation}
+          color={colors.readability}
+        />
+        <ScoreCard 
+          title="Security" 
+          score={categories.security.score} 
+          explanation={categories.security.explanation}
+          color={colors.security}
+        />
+        <ScoreCard 
+          title="Test Coverage" 
+          score={categories.testCoverage.score} 
+          explanation={categories.testCoverage.explanation}
+          color={colors.testCoverage}
+        />
       </div>
     </div>
   );
