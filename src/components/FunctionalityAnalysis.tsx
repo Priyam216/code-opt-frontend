@@ -17,9 +17,8 @@ const FunctionalityAnalysis = ({ content }: FunctionalityAnalysisProps) => {
         <CardTitle className="text-sm font-medium">Functionality Analysis</CardTitle>
       </CardHeader>
       <CardContent className="p-4 prose prose-sm prose-invert max-w-none">
-        <div className="h-[300px] overflow-auto">
+        <div className="h-[300px] overflow-auto markdown-content">
           <ReactMarkdown
-            className="markdown-content"
             remarkPlugins={[remarkGfm]}
           >
             {content}
