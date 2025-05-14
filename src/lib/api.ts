@@ -1,4 +1,3 @@
-
 /**
  * API service for code analysis and optimization
  * This file contains mock API endpoints that can be replaced with real backend calls
@@ -19,10 +18,31 @@ export interface LanguageInfo {
   color: string;
 }
 
+// IMPORTANT: This interface has been updated to match the backend response format
 export interface WorkflowData {
-  nodes: WorkflowNode[];
-  edges: WorkflowEdge[];
-  optimizableSteps: string[];
+  // The existing interface properties for backwards compatibility
+  nodes?: WorkflowNode[];
+  edges?: WorkflowEdge[];
+  optimizableSteps?: string[] | OptimizableStep[];
+  
+  // New properties to match the backend response format
+  steps?: {
+    id: string;
+    label: string;
+  }[];
+  dependencies?: {
+    from: string;
+    to: string;
+  }[];
+  optimizable_steps?: {
+    id: string;
+    reason: string;
+  }[];
+}
+
+export interface OptimizableStep {
+  id: string;
+  reason: string;
 }
 
 export interface WorkflowNode {
@@ -97,24 +117,65 @@ export interface OptimizationResult {
 export const analyzeCode = async (code: string): Promise<AnalysisResult> => {
   console.log('Analyzing code:', code);
   
-  // TODO: Replace with your real backend endpoint
-  // const response = await fetch('https://example.com/api/analyze', {
+  // TODO: BACKEND INTEGRATION
+  // Replace this mock implementation with your real backend API call
+  // Example:
+  // const response = await fetch('https://your-api-endpoint.com/analyze', {
   //   method: 'POST',
   //   headers: {
   //     'Content-Type': 'application/json',
+  //     'Authorization': `Bearer ${yourApiKey}`
   //   },
   //   body: JSON.stringify({ code }),
   // });
-  
+  // 
   // if (!response.ok) {
-  //   throw new Error('Failed to analyze code');
+  //   throw new Error(`Failed to analyze code: ${response.status}`);
   // }
-  
-  // return await response.json();
+  // 
+  // const data = await response.json();
+  // 
+  // // Transform the backend response to match our frontend data structure
+  // return {
+  //   detectedLanguage: {
+  //     name: data.language || "Unknown",
+  //     confidence: data.language_confidence || 0.5,
+  //     color: getLanguageColor(data.language) // Implement a function to map languages to colors
+  //   },
+  //   workflow: data.flowchart, // The flowchart data can be directly passed through
+  //   scores: {
+  //     overall: data.scores.overall_score,
+  //     categories: {
+  //       maintainability: {
+  //         score: data.scores.scores.maintainability.score,
+  //         explanation: data.scores.scores.maintainability.explanation
+  //       },
+  //       performance: {
+  //         score: data.scores.scores.performance_efficiency.score,
+  //         explanation: data.scores.scores.performance_efficiency.explanation
+  //       },
+  //       readability: {
+  //         score: data.scores.scores.readability.score,
+  //         explanation: data.scores.scores.readability.explanation
+  //       },
+  //       security: {
+  //         score: data.scores.scores.security_vulnerability.score,
+  //         explanation: data.scores.scores.security_vulnerability.explanation
+  //       },
+  //       testCoverage: {
+  //         score: data.scores.scores.test_coverage.score,
+  //         explanation: data.scores.scores.test_coverage.explanation
+  //       }
+  //     }
+  //   },
+  //   functionalityAnalysis: data.functionality_analysis,
+  //   categories: transformCategories(data.optimization_opportunities) // Transform optimization opportunities
+  // };
   
   // Mock response for development
   await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate network delay
   
+  // Example response with the new flowchart format
   return {
     detectedLanguage: {
       name: "JavaScript",
@@ -122,24 +183,38 @@ export const analyzeCode = async (code: string): Promise<AnalysisResult> => {
       color: "#f7df1e"
     },
     workflow: {
-      nodes: [
-        { id: "1", label: "Function Entry", type: "entry" },
-        { id: "2", label: "Check Base Cases", type: "conditional" },
-        { id: "3", label: "Return Base Result", type: "return" },
-        { id: "4", label: "Recursive Call 1", type: "function" },
-        { id: "5", label: "Recursive Call 2", type: "function" },
-        { id: "6", label: "Sum Results", type: "operation" },
-        { id: "7", label: "Return Result", type: "return" }
+      steps: [
+        { id: "1", label: "Define factorial function" },
+        { id: "2", label: "Check if n is 0 or 1" },
+        { id: "3", label: "Return 1 if n is 0 or 1" },
+        { id: "4", label: "Initialize result to 1" },
+        { id: "5", label: "Start loop from 2 to n" },
+        { id: "6", label: "Multiply result by current loop index" },
+        { id: "7", label: "Return final result" },
+        { id: "8", label: "Call factorial(5)" },
+        { id: "9", label: "Print result of factorial(5)" }
       ],
-      edges: [
-        { id: "e1-2", source: "1", target: "2" },
-        { id: "e2-3", source: "2", target: "3", label: "n <= 1" },
-        { id: "e2-4", source: "2", target: "4", label: "n > 1" },
-        { id: "e4-5", source: "4", target: "5" },
-        { id: "e5-6", source: "5", target: "6" },
-        { id: "e6-7", source: "6", target: "7" }
+      dependencies: [
+        { from: "1", to: "2" },
+        { from: "2", to: "3" },
+        { from: "2", to: "4" },
+        { from: "4", to: "5" },
+        { from: "5", to: "6" },
+        { from: "6", to: "5" },
+        { from: "5", to: "7" },
+        { from: "7", to: "8" },
+        { from: "8", to: "9" }
       ],
-      optimizableSteps: ["4", "5"]
+      optimizable_steps: [
+        {
+          id: "5",
+          reason: "The loop can be replaced with a more efficient algorithm or built-in function"
+        },
+        {
+          id: "6",
+          reason: "For very large numbers, this step might lead to numeric overflow"
+        }
+      ]
     },
     scores: {
       overall: 6.2,
@@ -166,17 +241,17 @@ export const analyzeCode = async (code: string): Promise<AnalysisResult> => {
         }
       }
     },
-    functionalityAnalysis: "## Functionality Analysis\n\nThis code implements a recursive Fibonacci algorithm which:\n\n1. Takes an input parameter `n`\n2. Returns directly for base cases (n ≤ 1)\n3. For other cases, recursively computes `fibonacci(n-1) + fibonacci(n-2)`\n\n### Time Complexity\n\nThe current implementation has **O(2^n)** time complexity due to redundant calculations.\n\n```javascript\nfunction fibonacci(n) {\n  if (n <= 1) return n;\n  return fibonacci(n-1) + fibonacci(n-2); // Exponential growth\n}\n```\n\nCan be optimized to **O(n)** using dynamic programming or memoization.",
+    functionalityAnalysis: "# Factorial Function Analysis\n\n## Overall Purpose and Functionality\n\nThis JavaScript code defines a custom function called `factorial` that calculates the factorial of a given non-negative integer. The factorial of a number n (denoted as n!) is the product of all positive integers from 1 to n. The code also includes a loop to print the factorial of numbers from 0 to 9.\n\n## Key Features and Implementation Details\n\n1. **Function Definition**: The code defines a function named `factorial` that takes one parameter `n`.\n\n2. **Base Case Handling**: \n   - The function first checks for base cases: if `n` is 0 or 1, it immediately returns 1, as 0! and 1! are both defined as 1.\n\n3. **Iterative Calculation**:\n   - For inputs greater than 1, the function uses a `for` loop to iteratively calculate the factorial.\n   - It initializes a `result` variable to 1 and then multiplies it by each integer from 2 to n.\n\n4. **Return Value**: The function returns the final calculated result.\n\n5. **Function Call**: After the function definition, there's a loop to print factorials of numbers from 0 to 9.\n\n## Usage Patterns and Intended Use Cases\n\n- This function is designed to be used for calculating factorials of non-negative integers.\n- It can be called with any non-negative integer argument.\n- Typical use cases might include:\n  - Mathematical computations\n  - Statistical calculations (e.g., in combinatorics)\n  - Algorithm implementations that require factorial calculations",
     categories: [
       {
         name: "CPU Utilization",
         hasIssues: true,
         issues: [
           {
-            title: "Recursive function call causing high CPU usage",
+            title: "Inefficient factorial calculation",
             location: "Lines 1-4",
-            reason: "Recursive Fibonacci implementation has exponential time complexity O(2^n)",
-            suggestion: "Use dynamic programming or memoization to reduce time complexity to O(n)"
+            reason: "The current implementation has O(n) time complexity, which is optimal for a single calculation",
+            suggestion: "For repeated calculations, consider using memoization to cache results"
           }
         ]
       },
@@ -187,8 +262,8 @@ export const analyzeCode = async (code: string): Promise<AnalysisResult> => {
           {
             title: "Inefficient memory allocation",
             location: "Lines 1-4",
-            reason: "Each recursive call allocates new stack frames, leading to potential stack overflow",
-            suggestion: "Implement an iterative solution with constant memory usage"
+            reason: "Each function call allocates new memory for the result variable",
+            suggestion: "Consider using a constant memory approach if calculating multiple factorials"
           }
         ]
       },
@@ -207,10 +282,10 @@ export const analyzeCode = async (code: string): Promise<AnalysisResult> => {
         hasIssues: true,
         issues: [
           {
-            title: "Slow execution for larger inputs",
+            title: "Potential overflow for large inputs",
             location: "Lines 1-4",
-            reason: "Exponential growth in execution time as input increases",
-            suggestion: "Implement bottom-up dynamic programming approach"
+            reason: "JavaScript has a maximum safe integer size (2^53 - 1), factorials grow very quickly",
+            suggestion: "Add input validation or use a BigInt implementation for large factorials"
           }
         ]
       },
@@ -229,10 +304,10 @@ export const analyzeCode = async (code: string): Promise<AnalysisResult> => {
         hasIssues: true,
         issues: [
           {
-            title: "Poor scaling with input size",
+            title: "Limited input range",
             location: "Lines 1-4",
-            reason: "Performance degrades exponentially with input size",
-            suggestion: "Implement an O(n) solution using iteration and memoization"
+            reason: "Factorial grows very quickly, limiting the practical input range",
+            suggestion: "Add input validation or implement an approximation for large inputs using Stirling's formula"
           }
         ]
       }
