@@ -8,9 +8,22 @@ import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/comp
 
 // Define the WorkflowData interface based on the API response
 export interface WorkflowData {
-  nodes: WorkflowNode[];
-  edges: WorkflowEdge[];
-  optimizableSteps: string[] | OptimizableStep[];
+  nodes?: WorkflowNode[];
+  edges?: WorkflowEdge[];
+  optimizableSteps?: string[] | OptimizableStep[];
+  // Backend response format properties
+  steps?: {
+    id: string;
+    label: string;
+  }[];
+  dependencies?: {
+    from: string;
+    to: string;
+  }[];
+  optimizable_steps?: {
+    id: string;
+    reason: string;
+  }[];
 }
 
 export interface WorkflowNode {
@@ -169,7 +182,11 @@ const FlowchartVisualization: React.FC<FlowchartVisualizationProps> = ({ workflo
         selectionAdorned: false,
         resizable: false,
         layoutConditions: go.Part.LayoutStandard & ~go.Part.LayoutNodeSized,
-        shadow: $(go.Shadow, { blur: 7, color: "rgba(0, 0, 0, 0.2)" }),
+        // Apply a shadow effect with JavaScript DOM API instead of GoJS Shadow
+        shadowVisible: true,
+        shadowOffset: new go.Point(2, 2),
+        shadowBlur: 7,
+        shadowColor: "rgba(0, 0, 0, 0.2)",
         // Add tooltip
         toolTip: $(go.Adornment, "Auto",
           $(go.Shape, { fill: "#2A2F42", stroke: "#676B79" }),
@@ -376,17 +393,19 @@ const FlowchartVisualization: React.FC<FlowchartVisualizationProps> = ({ workflo
     canvas.height = bounds.height * scale;
     
     // Draw diagram to canvas with better quality
-    diagram.makeSvg({
+    const svgOptions: go.SvgRendererOptions = {
       document: document,
       scale: scale,
       background: diagram.div ? diagram.div.style.backgroundColor : "rgba(0,0,0,0)",
-      callback: function(svg: SVGElement) {
+    };
+    
+    diagram.makeSvg(svgOptions)
+      .then((svg: SVGElement) => {
         // Convert SVG to a data URL
         const serializer = new XMLSerializer();
         const svgStr = serializer.serializeToString(svg);
         const svgBlob = new Blob([svgStr], {type: "image/svg+xml;charset=utf-8"});
-        const DOMURL = window.URL || window.webkitURL || window;
-        const url = DOMURL.createObjectURL(svgBlob);
+        const url = URL.createObjectURL(svgBlob);
         
         // Create image from SVG
         const img = new Image();
@@ -407,12 +426,11 @@ const FlowchartVisualization: React.FC<FlowchartVisualizationProps> = ({ workflo
             document.body.removeChild(a);
             
             // Clean up
-            DOMURL.revokeObjectURL(url);
+            URL.revokeObjectURL(url);
           }
         };
         img.src = url;
-      }
-    });
+      });
   };
 
   // Handle fullscreen mode
