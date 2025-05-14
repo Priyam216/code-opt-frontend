@@ -8,43 +8,17 @@ interface LanguageBadgeProps {
   language: LanguageInfo;
 }
 
-// Map of language names to their respective colors
-const languageColors: Record<string, string> = {
-  JavaScript: '#f1e05a',
-  TypeScript: '#2b7489',
-  Python: '#3572A5',
-  Java: '#b07219',
-  Ruby: '#701516',
-  PHP: '#4F5D95',
-  CSharp: '#178600',
-  CPlusPlus: '#f34b7d',
-  C: '#555555',
-  Go: '#00ADD8',
-  Rust: '#dea584',
-  Swift: '#ffac45',
-  Kotlin: '#F18E33',
-  Scala: '#c22d40',
-  HTML: '#e34c26',
-  CSS: '#563d7c',
-  Shell: '#89e051',
-  PowerShell: '#012456',
-  R: '#198CE7',
-  Dart: '#00B4AB',
-  // Add more languages as needed
-};
-
 const LanguageBadge = ({ language }: LanguageBadgeProps) => {
   if (!language) return null;
   
-  const { name, confidence } = language;
-  const color = languageColors[name] || '#9E76E8'; // Default to purple if language not found
+  const { name, confidence, color } = language;
 
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
           <Badge 
-            className="flex items-center gap-2 px-3 py-1.5 font-mono transition-all duration-300 animate-fade-in" 
+            className="flex items-center gap-2 px-2 py-1 font-mono" 
             style={{ 
               backgroundColor: `${color}20`, 
               color: color,
@@ -53,13 +27,13 @@ const LanguageBadge = ({ language }: LanguageBadgeProps) => {
             }}
           >
             <div 
-              className="w-3 h-3 rounded-full" 
+              className="w-2 h-2 rounded-full" 
               style={{ backgroundColor: color }}
             />
-            <span className="font-medium">{name}</span>
+            {name}
           </Badge>
         </TooltipTrigger>
-        <TooltipContent side="right" className="bg-popover border-border animate-fade-in">
+        <TooltipContent side="right">
           <div className="text-xs">
             <p>Detected Language: {name}</p>
             <p>Confidence: {(confidence * 100).toFixed(1)}%</p>

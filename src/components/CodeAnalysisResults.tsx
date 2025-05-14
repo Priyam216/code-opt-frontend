@@ -44,14 +44,14 @@ const CodeAnalysisResults: React.FC<CodeAnalysisResultsProps> = ({ results, clas
   
   return (
     <div className={`space-y-6 ${className} animate-fade-in`}>
-      {/* Language Detection - Enhanced with more prominent badge */}
+      {/* Language Detection */}
       {detectedLanguage && (
-        <div className="flex justify-between items-center mb-4 transition-all duration-300">
+        <div className="flex justify-between items-center">
           <LanguageBadge language={detectedLanguage} />
         </div>
       )}
       
-      {/* Workflow Visualization - Enhanced with arrows and fullscreen/download functionality */}
+      {/* Workflow Visualization */}
       {workflow && (
         <Collapsible open={openSections.workflow} onOpenChange={() => toggleSection('workflow')} className="w-full">
           <div className="flex justify-between items-center mb-2">
@@ -68,7 +68,7 @@ const CodeAnalysisResults: React.FC<CodeAnalysisResultsProps> = ({ results, clas
         </Collapsible>
       )}
       
-      {/* Score Cards - Enhanced with linear.ai inspired design */}
+      {/* Score Cards */}
       {scores && (
         <Collapsible open={openSections.scores} onOpenChange={() => toggleSection('scores')} className="w-full">
           <div className="flex justify-between items-center mb-2">
@@ -85,7 +85,7 @@ const CodeAnalysisResults: React.FC<CodeAnalysisResultsProps> = ({ results, clas
         </Collapsible>
       )}
 
-      {/* Issue Categories - Enhanced with better color-coding and animations */}
+      {/* Issue Categories */}
       <Collapsible open={openSections.issues} onOpenChange={() => toggleSection('issues')} className="w-full">
         <div className="flex justify-between items-center mb-2">
           <h3 className="text-sm font-medium">Optimization Opportunities</h3>
@@ -126,7 +126,7 @@ const CodeAnalysisResults: React.FC<CodeAnalysisResultsProps> = ({ results, clas
                   <CardContent>
                     <Accordion type="single" collapsible className="w-full">
                       {category.issues.map((issue, issueIndex) => (
-                        <AccordionItem key={issueIndex} value={`issue-${issueIndex}`} className="animate-fade-in">
+                        <AccordionItem key={issueIndex} value={`issue-${issueIndex}`}>
                           <AccordionTrigger className="text-sm">{issue.title}</AccordionTrigger>
                           <AccordionContent>
                             <div className="space-y-3 text-sm">
@@ -155,7 +155,7 @@ const CodeAnalysisResults: React.FC<CodeAnalysisResultsProps> = ({ results, clas
         </CollapsibleContent>
       </Collapsible>
 
-      {/* Functionality Analysis - Enhanced with better styling and readability */}
+      {/* Functionality Analysis */}
       {functionalityAnalysis && (
         <Collapsible open={openSections.functionality} onOpenChange={() => toggleSection('functionality')} className="w-full">
           <div className="flex justify-between items-center mb-2">
