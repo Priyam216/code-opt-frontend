@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { AlertTriangle, CircleArrowDown } from "lucide-react";
 import { 
@@ -155,7 +154,7 @@ const CodeAnalysisResults: React.FC<CodeAnalysisResultsProps> = ({ results, clas
         </CollapsibleContent>
       </Collapsible>
 
-      {/* Functionality Analysis */}
+      {/* Functionality Analysis - Now displays content directly without accordions */}
       {functionalityAnalysis && (
         <Collapsible open={openSections.functionality} onOpenChange={() => toggleSection('functionality')} className="w-full">
           <div className="flex justify-between items-center mb-2">

@@ -1,7 +1,6 @@
 
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 interface FunctionalityAnalysisProps {
   content: string;
@@ -103,24 +102,20 @@ const FunctionalityAnalysis: React.FC<FunctionalityAnalysisProps> = ({ content }
 
   return (
     <Card className="border border-border">
-      <CardContent className="p-4">
-        <Accordion type="single" collapsible className="w-full">
+      <CardContent className="p-6">
+        <div className="space-y-6">
           {sections.map((section, index) => {
             const title = getHeaderTitle(section);
             return (
-              <AccordionItem key={index} value={`section-${index}`} className="border-b border-border">
-                <AccordionTrigger className="text-sm font-medium hover:no-underline">
-                  {title}
-                </AccordionTrigger>
-                <AccordionContent className="pt-2 pb-4 px-1 text-sm">
-                  <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:mb-2 prose-p:my-2">
-                    {formatContent(section)}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
+              <div key={index} className="pb-4">
+                <h3 className="text-base font-semibold border-b border-border pb-2 mb-3">{title}</h3>
+                <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:mb-2 prose-p:my-2">
+                  {formatContent(section)}
+                </div>
+              </div>
             );
           })}
-        </Accordion>
+        </div>
       </CardContent>
     </Card>
   );
