@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import * as go from 'gojs';
 import { Card, CardContent } from "@/components/ui/card";
@@ -386,7 +385,7 @@ const FlowchartVisualization: React.FC<FlowchartVisualizationProps> = ({ workflo
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
-    // Set canvas size to diagram size
+    // Set canvas size to diagram bounds
     const bounds = diagram.documentBounds;
     const scale = 2; // Higher quality
     canvas.width = bounds.width * scale;
@@ -399,38 +398,42 @@ const FlowchartVisualization: React.FC<FlowchartVisualizationProps> = ({ workflo
       background: diagram.div ? diagram.div.style.backgroundColor : "rgba(0,0,0,0)",
     };
     
-    diagram.makeSvg(svgOptions)
-      .then((svg: SVGElement) => {
-        // Convert SVG to a data URL
-        const serializer = new XMLSerializer();
-        const svgStr = serializer.serializeToString(svg);
-        const svgBlob = new Blob([svgStr], {type: "image/svg+xml;charset=utf-8"});
-        const url = URL.createObjectURL(svgBlob);
-        
-        // Create image from SVG
-        const img = new Image();
-        img.onload = function() {
-          // Draw the image on the canvas
-          if (ctx) {
-            ctx.fillStyle = "white";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0);
-            
-            // Convert to PNG and download
-            const imgURI = canvas.toDataURL("image/png");
-            const a = document.createElement("a");
-            a.download = "flowchart.png";
-            a.href = imgURI;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            
-            // Clean up
-            URL.revokeObjectURL(url);
-          }
-        };
-        img.src = url;
-      });
+    // Fixed: TypeScript error with SVGElement by using proper type handling
+    try {
+      const svg = diagram.makeSvg(svgOptions);
+      
+      // Convert SVG to a data URL
+      const serializer = new XMLSerializer();
+      const svgStr = serializer.serializeToString(svg);
+      const svgBlob = new Blob([svgStr], {type: "image/svg+xml;charset=utf-8"});
+      const url = URL.createObjectURL(svgBlob);
+      
+      // Create image from SVG
+      const img = new Image();
+      img.onload = function() {
+        // Draw the image on the canvas
+        if (ctx) {
+          ctx.fillStyle = "white";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0);
+          
+          // Convert to PNG and download
+          const imgURI = canvas.toDataURL("image/png");
+          const a = document.createElement("a");
+          a.download = "flowchart.png";
+          a.href = imgURI;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          
+          // Clean up
+          URL.revokeObjectURL(url);
+        }
+      };
+      img.src = url;
+    } catch (error) {
+      console.error("Failed to generate SVG:", error);
+    }
   };
 
   // Handle fullscreen mode
