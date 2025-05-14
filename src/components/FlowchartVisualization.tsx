@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef } from 'react';
 import * as go from 'gojs';
 import { Card, CardContent } from "@/components/ui/card";
@@ -346,7 +347,8 @@ const FlowchartVisualization: React.FC<FlowchartVisualizationProps> = ({ workflo
           font: "10px 'Inter', sans-serif",
           stroke: "white",
           background: "rgba(30, 34, 47, 0.7)",
-          padding: 2
+          // Replace padding with margin which is supported by GoJS TextBlock
+          margin: 2
         },
         new go.Binding("text", "text")
       )
