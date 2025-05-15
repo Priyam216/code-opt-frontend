@@ -171,31 +171,11 @@ for (let i = 0; i < 10; i++) {
             {activeView === "analysis" ? (
               <CodeAnalysisResults results={analysisResults} className="p-2" />
             ) : (
-              <div className="flex flex-col gap-6 animate-fade-in">
-                <div className="h-[400px]">
-                  <CodeEditor
-                    title="Optimized Code"
-                    code={optimizationResults?.optimizedCode || optimizedCode}
-                    editable={false}
-                    diffLines={optimizationResults?.changedLines || []}
-                    diffType="added"
-                    onCopy={handleCopyOptimized}
-                    language="javascript"
-                  />
-                </div>
-                
-                {/* Performance Metrics - Only shown in optimization results */}
-                {optimizationResults && (
-                  <div className="mt-4">
-                    <h2 className="text-xl font-semibold mb-4">Performance Metrics</h2>
-                    <MetricsDashboard 
-                      executionTime={optimizationResults.metrics.executionTime}
-                      memoryUsage={optimizationResults.metrics.memoryUsage}
-                      codeComplexity={optimizationResults.metrics.codeComplexity}
-                    />
-                  </div>
-                )}
-              </div>
+              <OptimizationResultsPanel 
+                optimizedCode={optimizationResults?.optimizedCode || optimizedCode}
+                optimizationResults={optimizationResults}
+                // You can add props for scores, detailedChanges, summary here once backend is integrated.
+              />
             )}
           </div>
         </div>
