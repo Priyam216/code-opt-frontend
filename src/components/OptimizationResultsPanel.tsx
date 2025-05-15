@@ -1,94 +1,57 @@
 
 import React, { Suspense } from 'react';
 import CodeEditor from './CodeEditor';
-import OptimizedFlowchart from './OptimizedFlowchart';
-import ImprovementsCard from './ImprovementsCard';
+// Reuse the analysis results flowchart for optimization visual
+import FlowchartVisualization, { WorkflowData } from './FlowchartVisualization';
+import ImprovementsCard from './ImprovementsCard'; // for improvement percentages
 import OptimizedScoreGrid from './OptimizedScoreGrid';
-import OptimizedChangesList from './OptimizedChangesList';
-import ImprovementSummaryCard from './ImprovementSummaryCard';
+import DetailedChangesList from './DetailedChangesList';
+import ImprovementSummaryBlock from './ImprovementSummaryBlock';
 import { Card, CardContent } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from "@/components/ui/sonner";
 import { ChevronDown } from 'lucide-react';
-// Add comments where real backend data or hooks should be used
 
+/**
+ * OptimizationResultsPanel
+ * Integrates all post-optimization visualizations using backend-ready hooks/data.
+ * Backend endpoints should provide structure for props:
+ * - optimized_code: string
+ * - optimized_code_flowchart: WorkflowData
+ * - improvement_percentages: { code_complexity, execution_time, memory_usage }
+ * - optimized_code_scores: scores structure
+ * - detailed_changes: array
+ * - improvement_summary: markdown string
+ */
 interface OptimizationResultsPanelProps {
   optimizedCode: string;
-  optimizationResults: any;
-  // scores, changes, and summary would come from backend
+  optimizationResults: any; // see backend JSON example in instructions
 }
 
-// Main Optimization Results Panel inspired by linear.ai
 const OptimizationResultsPanel: React.FC<OptimizationResultsPanelProps> = ({
   optimizedCode,
   optimizationResults,
 }) => {
-  // Demo: Replace these in real usage with backend data
-  const workflow = optimizationResults?.workflow ?? {
-    steps: [
-      { id: "1", label: "Start Optimization" },
-      { id: "2", label: "Apply Vectorization" },
-      { id: "3", label: "Return Optimized Result" }
-    ],
-    dependencies: [
-      { from: "1", to: "2" },
-      { from: "2", to: "3" }
-    ],
-    optimizable_steps: [
-      { id: "2", reason: "Can further parallelize this operation" }
-    ]
+  // --- BACKEND INTEGRATION POINTS ---
+  // All fields below should come from backend; demo fallback provided for logic/testing.
+  const flowchartData: WorkflowData = optimizationResults?.optimized_code_flowchart;
+
+  const improvementPercentages = optimizationResults?.improvement_percentages ?? {
+    code_complexity: 0,
+    execution_time: 0,
+    memory_usage: 0
   };
 
-  const improvementMetrics = optimizationResults?.metrics ?? {
-    executionTime: { value: 33, label: "% faster", improvement: true },
-    memoryUsage: { value: 17, label: "% less", improvement: true },
-    codeComplexity: { value: 41, label: "% simpler", improvement: true }
+  const codeScores = optimizationResults?.optimized_code_scores ?? {
+    overall_score: 0,
+    scores: {}
   };
 
-  const scoreDemo = {
-    overall: 8.7,
-    categories: {
-      maintainability: { score: 9.5, explanation: "Refactored for modularity and comments improved." },
-      performance: { score: 9.2, explanation: "Vectorization led to major speedup." },
-      readability: { score: 8.7, explanation: "Cleaner control flow and naming." },
-      security: { score: 9.8, explanation: "Input validation added." },
-      testCoverage: { score: 8.1, explanation: "Comprehensive testing of edge cases." }
-    }
-  };
+  const detailedChanges = optimizationResults?.detailed_changes ?? [];
 
-  const changes = [
-    {
-      category: "Performance",
-      issue: "Inefficient for-loop",
-      suggestion: "Replaced loop with vectorized array operation.",
-      location: "Lines 3-18",
-      metric: "Execution Time"
-    },
-    {
-      category: "Maintainability",
-      issue: "No input validation",
-      suggestion: "Added input checks for proper type and range.",
-      location: "Lines 1-2",
-      metric: "Security"
-    }
-  ];
+  const summary = optimizationResults?.improvement_summary ?? '';
 
-  const improvementSummary = `
-**Key Improvements:**  
-- Applied vectorization for speed.
-- Reduced memory footprint via in-place operations.
-- Added input validation for robustness.
-
-\`\`\`js
-// Example optimized core
-function fastOptimize(arr) {
-  if (!Array.isArray(arr)) throw new Error("Input must be array");
-  return arr.map(x => x * 2); // demo
-}
-\`\`\`
-`;
-
-  // Optimization: Lazy load heavy sections (flowchart, summary)
+  // --- UI/RENDER ---
   return (
     <div className="flex flex-col gap-8">
       {/* -------- 1️⃣ Optimized Code Display -------- */}
@@ -116,7 +79,7 @@ function fastOptimize(arr) {
         </CardContent>
       </Card>
 
-      {/* -------- 2️⃣ Flowchart Visualization -------- */}
+      {/* -------- 2️⃣ Flowchart Visualization (same as analysis results) -------- */}
       <Suspense fallback={<div className="text-center py-4">Loading flowchart…</div>}>
         <Collapsible defaultOpen>
           <CollapsibleTrigger asChild>
@@ -126,24 +89,55 @@ function fastOptimize(arr) {
             </div>
           </CollapsibleTrigger>
           <CollapsibleContent>
-            {/* Real backend: pass optimizationResults.workflow here */}
-            <OptimizedFlowchart data={workflow} />
+            {/* Backend integration: Pass optimizationResults.optimized_code_flowchart directly */}
+            {flowchartData && (
+              <FlowchartVisualization workflow={flowchartData} />
+            )}
           </CollapsibleContent>
         </Collapsible>
       </Suspense>
 
       {/* -------- 3️⃣ Improvement Percentages -------- */}
-      <ImprovementsCard metrics={improvementMetrics} />
+      <ImprovementsCard metrics={{
+        codeComplexity: {
+          value: improvementPercentages.code_complexity,
+          label: "% complexity change",
+          improvement: improvementPercentages.code_complexity < 0,
+        },
+        executionTime: {
+          value: improvementPercentages.execution_time,
+          label: "% faster",
+          improvement: improvementPercentages.execution_time > 0,
+        },
+        memoryUsage: {
+          value: improvementPercentages.memory_usage,
+          label: "% less",
+          improvement: improvementPercentages.memory_usage > 0,
+        },
+      }} />
 
       {/* -------- 4️⃣ Scores Grid -------- */}
-      <OptimizedScoreGrid scores={scoreDemo} />
+      {codeScores && (
+        <OptimizedScoreGrid
+          scores={{
+            overall: codeScores.overall_score,
+            categories: {
+              maintainability: codeScores.scores.maintainability ?? { score: 0, explanation: "" },
+              performance: codeScores.scores.performance_efficiency ?? { score: 0, explanation: "" },
+              readability: codeScores.scores.readability ?? { score: 0, explanation: "" },
+              security: codeScores.scores.security_vulnerability ?? { score: 0, explanation: "" },
+              testCoverage: codeScores.scores.test_coverage ?? { score: 0, explanation: "" },
+            }
+          }}
+        />
+      )}
 
       {/* -------- 5️⃣ Detailed Changes -------- */}
-      <OptimizedChangesList changes={changes} />
+      <DetailedChangesList changes={detailedChanges} />
 
-      {/* -------- 6️⃣ Improvement Summary -------- */}
+      {/* -------- 6️⃣ Improvement Summary (markdown styled like FunctionalityAnalysis) -------- */}
       <Suspense fallback={<div>Loading summary…</div>}>
-        <ImprovementSummaryCard summary={improvementSummary} />
+        <ImprovementSummaryBlock summary={summary} />
       </Suspense>
     </div>
   );
