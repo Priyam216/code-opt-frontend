@@ -8,6 +8,7 @@ import CodeAnalysisResults from './CodeAnalysisResults';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { analyzeCode, optimizeCode, AnalysisResult, OptimizationResult } from '@/lib/api';
+import OptimizationResultsPanel from './OptimizationResultsPanel';
 
 const CodeOptimizer = () => {
   const [code, setCode] = useState(`function fibonacci(n) {

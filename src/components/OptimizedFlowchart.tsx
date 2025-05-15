@@ -1,10 +1,19 @@
-
 import React, { useMemo, useRef } from 'react';
-import { MiniMap, Controls, Background, ReactFlow, useNodesState, useEdgesState, MarkerType } from 'reactflow';
+import {
+  MiniMap,
+  Controls,
+  Background,
+  ReactFlow,
+  useNodesState,
+  useEdgesState,
+  MarkerType,
+  Position
+} from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Button } from "@/components/ui/button";
 import { Download, Expand } from 'lucide-react';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { Card, CardContent } from "@/components/ui/card";
 
 // Props type
 export interface OptimizedFlowchartProps {
@@ -58,6 +67,7 @@ const OptimizedFlowchart: React.FC<OptimizedFlowchartProps> = ({ data }) => {
       return {
         id: step.id,
         data: { label: step.label, reason: opt ? opt.reason : null },
+        // Randomly place nodes (could be improved for production)
         position: { x: Math.random() * 100, y: Math.random() * 250 },
         style: {
           ...nodeStyle,
@@ -66,8 +76,9 @@ const OptimizedFlowchart: React.FC<OptimizedFlowchartProps> = ({ data }) => {
           color: "white",
         },
         className: opt ? optBg : "",
-        sourcePosition: "right",
-        targetPosition: "left"
+        // FIX: Use Position enum instead of string
+        sourcePosition: Position.Right,
+        targetPosition: Position.Left,
       }
     });
   }, [data]);
