@@ -1,11 +1,15 @@
 
 import React from 'react';
-import { Card, CardContent } from "@/components/ui/card";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AlertTriangle } from "lucide-react";
+import { 
+  Accordion, 
+  AccordionContent, 
+  AccordionItem, 
+  AccordionTrigger 
+} from "@/components/ui/accordion";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-export interface DetailedChange {
+interface DetailedChange {
   issue: string;
   improvement: string;
   location: string;
@@ -17,57 +21,64 @@ interface DetailedChangesProps {
 }
 
 const DetailedChanges: React.FC<DetailedChangesProps> = ({ changes }) => {
-  // Group changes by metric
-  const groupedChanges = changes.reduce<Record<string, DetailedChange[]>>((acc, change) => {
-    if (!acc[change.metric]) {
-      acc[change.metric] = [];
-    }
-    acc[change.metric].push(change);
-    return acc;
-  }, {});
+  if (!changes || changes.length === 0) {
+    return <div className="p-4">No detailed changes available</div>;
+  }
 
+  // Group changes by metric
+  const changesByMetric: Record<string, DetailedChange[]> = {};
+  
+  changes.forEach(change => {
+    if (!changesByMetric[change.metric]) {
+      changesByMetric[change.metric] = [];
+    }
+    changesByMetric[change.metric].push(change);
+  });
+  
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardContent className="pt-6">
-          <Accordion type="single" collapsible className="w-full">
-            {Object.entries(groupedChanges).map(([metric, metricChanges], index) => (
-              <AccordionItem key={index} value={`item-${index}`}>
-                <AccordionTrigger className="hover:no-underline">
-                  <div className="flex items-center gap-2 text-left">
-                    <Badge variant="outline" className="bg-primary/10 text-primary">
-                      {metric}
-                    </Badge>
-                    <span className="text-sm font-medium">
-                      {metricChanges.length} {metricChanges.length === 1 ? 'issue' : 'issues'} found
-                    </span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Issue</TableHead>
-                        <TableHead>Location</TableHead>
-                        <TableHead>Improvement</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {metricChanges.map((change, i) => (
-                        <TableRow key={i}>
-                          <TableCell className="font-medium">{change.issue}</TableCell>
-                          <TableCell className="text-sm text-muted-foreground">{change.location}</TableCell>
-                          <TableCell>{change.improvement}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </CardContent>
-      </Card>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {Object.entries(changesByMetric).map(([metric, metricChanges], index) => (
+        <Card 
+          key={index} 
+          className="border border-amber-700/30 bg-amber-950/10 transition-all duration-300 hover:shadow-md"
+        >
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <AlertTriangle size={16} className="text-amber-500" />
+                {metric}
+              </CardTitle>
+              <span className="text-xs px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded-full">
+                {metricChanges.length} {metricChanges.length === 1 ? 'change' : 'changes'}
+              </span>
+            </div>
+            <CardDescription className="text-xs">
+              {metricChanges.length} optimization {metricChanges.length === 1 ? 'change' : 'changes'} applied
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Accordion type="single" collapsible className="w-full">
+              {metricChanges.map((change, issueIndex) => (
+                <AccordionItem key={issueIndex} value={`issue-${issueIndex}`}>
+                  <AccordionTrigger className="text-sm">{change.issue}</AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-3 text-sm">
+                      <div>
+                        <div className="font-medium text-xs text-muted-foreground mb-1">CODE LOCATION</div>
+                        <div className="bg-secondary/50 px-3 py-1 rounded-sm">{change.location}</div>
+                      </div>
+                      <div>
+                        <div className="font-medium text-xs text-muted-foreground mb-1">IMPROVEMENT</div>
+                        <p className="text-primary">{change.improvement}</p>
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 };
