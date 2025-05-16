@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Search, Zap } from "lucide-react";
@@ -8,6 +9,11 @@ import CodeAnalysisResults from './CodeAnalysisResults';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { analyzeCode, optimizeCode, AnalysisResult, OptimizationResult } from '@/lib/api';
+import { CircleArrowDown } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import DetailedChanges from './DetailedChanges';
+import OptimizationImprovementSummary from './OptimizationImprovementSummary';
+import FlowchartVisualization from './FlowchartVisualization';
 
 const CodeOptimizer = () => {
   const [code, setCode] = useState(`function fibonacci(n) {
@@ -25,6 +31,12 @@ for (let i = 0; i < 10; i++) {
   const [activeView, setActiveView] = useState<"analysis" | "optimization" | null>(null);
   const [analysisResults, setAnalysisResults] = useState<AnalysisResult | null>(null);
   const [optimizationResults, setOptimizationResults] = useState<OptimizationResult | null>(null);
+  const [openSections, setOpenSections] = useState({
+    workflow: true,
+    metrics: true,
+    changes: true,
+    summary: true
+  });
 
   const handleOptimize = async () => {
     try {
@@ -68,6 +80,13 @@ for (let i = 0; i < 10; i++) {
   const handleCopyOptimized = () => {
     navigator.clipboard.writeText(optimizedCode);
     toast.success("Optimized code copied to clipboard!");
+  };
+
+  const toggleSection = (section: keyof typeof openSections) => {
+    setOpenSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
   };
 
   return (
@@ -172,6 +191,7 @@ for (let i = 0; i < 10; i++) {
               <CodeAnalysisResults results={analysisResults} className="p-2" />
             ) : (
               <div className="flex flex-col gap-6 animate-fade-in">
+                {/* Optimized Code */}
                 <div className="h-[400px]">
                   <CodeEditor
                     title="Optimized Code"
@@ -184,16 +204,89 @@ for (let i = 0; i < 10; i++) {
                   />
                 </div>
                 
-                {/* Performance Metrics - Only shown in optimization results */}
-                {optimizationResults && (
-                  <div className="mt-4">
-                    <h2 className="text-xl font-semibold mb-4">Performance Metrics</h2>
-                    <MetricsDashboard 
-                      executionTime={optimizationResults.metrics.executionTime}
-                      memoryUsage={optimizationResults.metrics.memoryUsage}
-                      codeComplexity={optimizationResults.metrics.codeComplexity}
-                    />
-                  </div>
+                {/* Flow Chart Visualization - Using the same component as analysis results */}
+                {optimizationResults?.optimized_code_flowchart && (
+                  <Collapsible open={openSections.workflow} onOpenChange={() => toggleSection('workflow')} className="w-full">
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="text-sm font-medium">Code Flow Visualization</h3>
+                      <CollapsibleTrigger asChild>
+                        <Button variant="ghost" size="sm" className="p-0 h-8 w-8">
+                          <CircleArrowDown className={`h-5 w-5 transition-transform duration-200 ${openSections.workflow ? 'rotate-180' : ''}`} />
+                        </Button>
+                      </CollapsibleTrigger>
+                    </div>
+                    <CollapsibleContent className="transition-all duration-300">
+                      {/* Use the FlowchartVisualization component from analysis results */}
+                      <FlowchartVisualization workflow={optimizationResults.optimized_code_flowchart} />
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
+                
+                {/* Performance Metrics */}
+                {optimizationResults?.metrics && (
+                  <Collapsible open={openSections.metrics} onOpenChange={() => toggleSection('metrics')} className="w-full">
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="text-sm font-medium">Performance Metrics</h3>
+                      <CollapsibleTrigger asChild>
+                        <Button variant="ghost" size="sm" className="p-0 h-8 w-8">
+                          <CircleArrowDown className={`h-5 w-5 transition-transform duration-200 ${openSections.metrics ? 'rotate-180' : ''}`} />
+                        </Button>
+                      </CollapsibleTrigger>
+                    </div>
+                    <CollapsibleContent className="transition-all duration-300">
+                      <MetricsDashboard 
+                        executionTime={{
+                          value: optimizationResults.improvement_percentages?.execution_time || optimizationResults.metrics.executionTime.value,
+                          label: "faster",
+                          improvement: true
+                        }}
+                        memoryUsage={{
+                          value: optimizationResults.improvement_percentages?.memory_usage || optimizationResults.metrics.memoryUsage.value,
+                          label: "less memory",
+                          improvement: true
+                        }}
+                        codeComplexity={{
+                          value: optimizationResults.improvement_percentages?.code_complexity || optimizationResults.metrics.codeComplexity.value,
+                          label: "complexity reduction",
+                          improvement: true
+                        }}
+                      />
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
+                
+                {/* Detailed Changes - Using the DetailedChanges component */}
+                {optimizationResults?.detailed_changes && (
+                  <Collapsible open={openSections.changes} onOpenChange={() => toggleSection('changes')} className="w-full">
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="text-sm font-medium">Detailed Changes</h3>
+                      <CollapsibleTrigger asChild>
+                        <Button variant="ghost" size="sm" className="p-0 h-8 w-8">
+                          <CircleArrowDown className={`h-5 w-5 transition-transform duration-200 ${openSections.changes ? 'rotate-180' : ''}`} />
+                        </Button>
+                      </CollapsibleTrigger>
+                    </div>
+                    <CollapsibleContent className="transition-all duration-300">
+                      <DetailedChanges changes={optimizationResults.detailed_changes} />
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
+                
+                {/* Improvement Summary - Using the OptimizationImprovementSummary component */}
+                {optimizationResults?.improvement_summary && (
+                  <Collapsible open={openSections.summary} onOpenChange={() => toggleSection('summary')} className="w-full">
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="text-sm font-medium">Improvement Summary</h3>
+                      <CollapsibleTrigger asChild>
+                        <Button variant="ghost" size="sm" className="p-0 h-8 w-8">
+                          <CircleArrowDown className={`h-5 w-5 transition-transform duration-200 ${openSections.summary ? 'rotate-180' : ''}`} />
+                        </Button>
+                      </CollapsibleTrigger>
+                    </div>
+                    <CollapsibleContent className="transition-all duration-300">
+                      <OptimizationImprovementSummary content={optimizationResults.improvement_summary} />
+                    </CollapsibleContent>
+                  </Collapsible>
                 )}
               </div>
             )}
