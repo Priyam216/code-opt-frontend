@@ -109,6 +109,8 @@ export interface OptimizationResult {
   changedLines: number[];
 }
 
+const BACKEND_URL = "http://127.0.0.1:5000"; // Replace with your actual backend URL
+
 /**
  * Analyze code using the backend service
  * @param code The code to analyze
@@ -116,203 +118,116 @@ export interface OptimizationResult {
  */
 export const analyzeCode = async (code: string): Promise<AnalysisResult> => {
   console.log('Analyzing code:', code);
-  
-  // TODO: BACKEND INTEGRATION
-  // Replace this mock implementation with your real backend API call
-  // Example:
-  // const response = await fetch('https://your-api-endpoint.com/analyze', {
-  //   method: 'POST',
-  //   headers: {
-  //     'Content-Type': 'application/json',
-  //     'Authorization': `Bearer ${yourApiKey}`
-  //   },
-  //   body: JSON.stringify({ code }),
-  // });
-  // 
-  // if (!response.ok) {
-  //   throw new Error(`Failed to analyze code: ${response.status}`);
-  // }
-  // 
-  // const data = await response.json();
-  // 
-  // // Transform the backend response to match our frontend data structure
-  // return {
-  //   detectedLanguage: {
-  //     name: data.language || "Unknown",
-  //     confidence: data.language_confidence || 0.5,
-  //     color: getLanguageColor(data.language) // Implement a function to map languages to colors
-  //   },
-  //   workflow: data.flowchart, // The flowchart data can be directly passed through
-  //   scores: {
-  //     overall: data.scores.overall_score,
-  //     categories: {
-  //       maintainability: {
-  //         score: data.scores.scores.maintainability.score,
-  //         explanation: data.scores.scores.maintainability.explanation
-  //       },
-  //       performance: {
-  //         score: data.scores.scores.performance_efficiency.score,
-  //         explanation: data.scores.scores.performance_efficiency.explanation
-  //       },
-  //       readability: {
-  //         score: data.scores.scores.readability.score,
-  //         explanation: data.scores.scores.readability.explanation
-  //       },
-  //       security: {
-  //         score: data.scores.scores.security_vulnerability.score,
-  //         explanation: data.scores.scores.security_vulnerability.explanation
-  //       },
-  //       testCoverage: {
-  //         score: data.scores.scores.test_coverage.score,
-  //         explanation: data.scores.scores.test_coverage.explanation
-  //       }
-  //     }
-  //   },
-  //   functionalityAnalysis: data.functionality_analysis,
-  //   categories: transformCategories(data.optimization_opportunities) // Transform optimization opportunities
-  // };
-  
-  // Mock response for development
-  await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate network delay
-  
-  // Example response with the new flowchart format
-  return {
-    detectedLanguage: {
-      name: "JavaScript",
-      confidence: 0.95,
-      color: "#f7df1e"
-    },
-    workflow: {
-      steps: [
-        { id: "1", label: "Define factorial function" },
-        { id: "2", label: "Check if n is 0 or 1" },
-        { id: "3", label: "Return 1 if n is 0 or 1" },
-        { id: "4", label: "Initialize result to 1" },
-        { id: "5", label: "Start loop from 2 to n" },
-        { id: "6", label: "Multiply result by current loop index" },
-        { id: "7", label: "Return final result" },
-        { id: "8", label: "Call factorial(5)" },
-        { id: "9", label: "Print result of factorial(5)" }
-      ],
-      dependencies: [
-        { from: "1", to: "2" },
-        { from: "2", to: "3" },
-        { from: "2", to: "4" },
-        { from: "4", to: "5" },
-        { from: "5", to: "6" },
-        { from: "6", to: "5" },
-        { from: "5", to: "7" },
-        { from: "7", to: "8" },
-        { from: "8", to: "9" }
-      ],
-      optimizable_steps: [
+
+  try {
+    // Perform the API call
+    const response = await fetch(`${BACKEND_URL}/api/analysis_result`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ code }),
+    });
+
+    // Check if the response is successful
+    if (!response.ok) {
+      throw new Error(`Failed to analyze code: ${response.status} - ${response.statusText}`);
+    }
+
+    // Parse the response JSON
+    const data = await response.json();
+
+    // Map the backend response to your frontend types
+    return {
+      detectedLanguage: {
+        name: data.language || "Unknown",
+        confidence: 1.0, // Since confidence is not provided by the backend, we assume 100%
+        color: data.language === "r" ? "#1984c8" : "#ccc", // Set color based on language
+      },
+      workflow: {
+        steps: data.flowchart.steps,
+        dependencies: data.flowchart.dependencies,
+        optimizable_steps: data.flowchart.optimizable_steps
+      },
+      scores: {
+        overall: data.scores.overall_score,
+        categories: {
+          maintainability: {
+            score: data.scores.scores.maintainability.score,
+            explanation: data.scores.scores.maintainability.explanation,
+          },
+          performance: {
+            score: data.scores.scores.performance_efficiency.score,
+            explanation: data.scores.scores.performance_efficiency.explanation,
+          },
+          readability: {
+            score: data.scores.scores.readability.score,
+            explanation: data.scores.scores.readability.explanation,
+          },
+          security: {
+            score: data.scores.scores.security_vulnerability.score,
+            explanation: data.scores.scores.security_vulnerability.explanation,
+          },
+          testCoverage: {
+            score: data.scores.scores.test_coverage.score,
+            explanation: data.scores.scores.test_coverage.explanation,
+          }
+        }
+      },
+      functionalityAnalysis: data.functionality_analysis,
+      categories: [
         {
-          id: "5",
-          reason: "The loop can be replaced with a more efficient algorithm or built-in function"
+          name: "Maintainability",
+          hasIssues: data.scores.scores.maintainability.score < 7,
+          issues: [
+            {
+              title: "Lack of Comments",
+              location: "Entire Code",
+              reason: "The function is self-contained and simple, but lacks comments for complex logic.",
+              suggestion: "Add detailed comments to improve understanding."
+            }
+          ]
         },
         {
-          id: "6",
-          reason: "For very large numbers, this step might lead to numeric overflow"
+          name: "Performance Efficiency",
+          hasIssues: data.scores.scores.performance_efficiency.score < 7,
+          issues: [
+            {
+              title: "Loop-based Calculation",
+              location: "Loop Section",
+              reason: "The code uses a loop instead of R's built-in `prod()` function.",
+              suggestion: "Consider replacing the loop with `prod()` for better efficiency."
+            }
+          ]
+        },
+        {
+          name: "Readability",
+          hasIssues: data.scores.scores.readability.score < 7,
+          issues: []
+        },
+        {
+          name: "Security Vulnerability",
+          hasIssues: false,
+          issues: []
+        },
+        {
+          name: "Test Coverage",
+          hasIssues: data.scores.scores.test_coverage.score < 5,
+          issues: [
+            {
+              title: "Lack of Test Cases",
+              location: "Function Usage",
+              reason: "Only a single print statement is available for testing.",
+              suggestion: "Implement unit tests to ensure correctness."
+            }
+          ]
         }
       ]
-    },
-    scores: {
-      overall: 6.2,
-      categories: {
-        maintainability: {
-          score: 7.5,
-          explanation: "The code is well-structured but has room for improvement with more comments"
-        },
-        performance: {
-          score: 3.0,
-          explanation: "Recursive algorithm leads to exponential time complexity"
-        },
-        readability: {
-          score: 8.0,
-          explanation: "Variable names are clear, but lacks documentation"
-        },
-        security: {
-          score: 9.0,
-          explanation: "No obvious security vulnerabilities found"
-        },
-        testCoverage: {
-          score: 4.0,
-          explanation: "No test cases found in the provided code"
-        }
-      }
-    },
-    functionalityAnalysis: "# Factorial Function Analysis\n\n## Overall Purpose and Functionality\n\nThis JavaScript code defines a custom function called `factorial` that calculates the factorial of a given non-negative integer. The factorial of a number n (denoted as n!) is the product of all positive integers from 1 to n. The code also includes a loop to print the factorial of numbers from 0 to 9.\n\n## Key Features and Implementation Details\n\n1. **Function Definition**: The code defines a function named `factorial` that takes one parameter `n`.\n\n2. **Base Case Handling**: \n   - The function first checks for base cases: if `n` is 0 or 1, it immediately returns 1, as 0! and 1! are both defined as 1.\n\n3. **Iterative Calculation**:\n   - For inputs greater than 1, the function uses a `for` loop to iteratively calculate the factorial.\n   - It initializes a `result` variable to 1 and then multiplies it by each integer from 2 to n.\n\n4. **Return Value**: The function returns the final calculated result.\n\n5. **Function Call**: After the function definition, there's a loop to print factorials of numbers from 0 to 9.\n\n## Usage Patterns and Intended Use Cases\n\n- This function is designed to be used for calculating factorials of non-negative integers.\n- It can be called with any non-negative integer argument.\n- Typical use cases might include:\n  - Mathematical computations\n  - Statistical calculations (e.g., in combinatorics)\n  - Algorithm implementations that require factorial calculations",
-    categories: [
-      {
-        name: "CPU Utilization",
-        hasIssues: true,
-        issues: [
-          {
-            title: "Inefficient factorial calculation",
-            location: "Lines 1-4",
-            reason: "The current implementation has O(n) time complexity, which is optimal for a single calculation",
-            suggestion: "For repeated calculations, consider using memoization to cache results"
-          }
-        ]
-      },
-      {
-        name: "Memory Usage",
-        hasIssues: true,
-        issues: [
-          {
-            title: "Inefficient memory allocation",
-            location: "Lines 1-4",
-            reason: "Each function call allocates new memory for the result variable",
-            suggestion: "Consider using a constant memory approach if calculating multiple factorials"
-          }
-        ]
-      },
-      {
-        name: "Error Handling",
-        hasIssues: false,
-        issues: []
-      },
-      {
-        name: "Data Throughput",
-        hasIssues: false,
-        issues: []
-      },
-      {
-        name: "Model Execution Time",
-        hasIssues: true,
-        issues: [
-          {
-            title: "Potential overflow for large inputs",
-            location: "Lines 1-4",
-            reason: "JavaScript has a maximum safe integer size (2^53 - 1), factorials grow very quickly",
-            suggestion: "Add input validation or use a BigInt implementation for large factorials"
-          }
-        ]
-      },
-      {
-        name: "Query Optimization",
-        hasIssues: false,
-        issues: []
-      },
-      {
-        name: "Reporting and Visualization Latency",
-        hasIssues: false,
-        issues: []
-      },
-      {
-        name: "Scalability",
-        hasIssues: true,
-        issues: [
-          {
-            title: "Limited input range",
-            location: "Lines 1-4",
-            reason: "Factorial grows very quickly, limiting the practical input range",
-            suggestion: "Add input validation or implement an approximation for large inputs using Stirling's formula"
-          }
-        ]
-      }
-    ]
-  };
+    };
+  } catch (error) {
+    console.error("Error analyzing code:", error);
+    throw error;
+  }
 };
 
 /**
