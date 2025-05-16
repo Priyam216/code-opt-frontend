@@ -8,7 +8,6 @@ import CodeAnalysisResults from './CodeAnalysisResults';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { analyzeCode, optimizeCode, AnalysisResult, OptimizationResult } from '@/lib/api';
-import OptimizationResultsPanel from './OptimizationResultsPanel';
 
 const CodeOptimizer = () => {
   const [code, setCode] = useState(`function fibonacci(n) {
@@ -172,11 +171,31 @@ for (let i = 0; i < 10; i++) {
             {activeView === "analysis" ? (
               <CodeAnalysisResults results={analysisResults} className="p-2" />
             ) : (
-              <OptimizationResultsPanel 
-                optimizedCode={optimizationResults?.optimizedCode || optimizedCode}
-                optimizationResults={optimizationResults}
-                // You can add props for scores, detailedChanges, summary here once backend is integrated.
-              />
+              <div className="flex flex-col gap-6 animate-fade-in">
+                <div className="h-[400px]">
+                  <CodeEditor
+                    title="Optimized Code"
+                    code={optimizationResults?.optimizedCode || optimizedCode}
+                    editable={false}
+                    diffLines={optimizationResults?.changedLines || []}
+                    diffType="added"
+                    onCopy={handleCopyOptimized}
+                    language="javascript"
+                  />
+                </div>
+                
+                {/* Performance Metrics - Only shown in optimization results */}
+                {optimizationResults && (
+                  <div className="mt-4">
+                    <h2 className="text-xl font-semibold mb-4">Performance Metrics</h2>
+                    <MetricsDashboard 
+                      executionTime={optimizationResults.metrics.executionTime}
+                      memoryUsage={optimizationResults.metrics.memoryUsage}
+                      codeComplexity={optimizationResults.metrics.codeComplexity}
+                    />
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
