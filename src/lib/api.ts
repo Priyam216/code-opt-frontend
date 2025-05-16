@@ -127,6 +127,8 @@ export interface OptimizationResult {
 }
 const BACKEND_URL = "http://127.0.0.1:5000"; // Replace with your actual backend URL
 
+const BACKEND_URL = "http://127.0.0.1:5000"; // Replace with your actual backend URL
+
 /**
  * Analyze code using the backend service
  * @param code The code to analyze
