@@ -3,17 +3,12 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Search, Zap } from "lucide-react";
 import CodeEditor from './CodeEditor';
-import MetricsDashboard from './MetricsDashboard';
-import { toast } from "@/components/ui/sonner";
-import CodeAnalysisResults from './CodeAnalysisResults';
+import { toast } from "@/components/ui/use-toast";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { analyzeCode, optimizeCode, AnalysisResult, OptimizationResult } from '@/lib/api';
-import { CircleArrowDown } from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import DetailedChanges from './DetailedChanges';
-import OptimizationImprovementSummary from './OptimizationImprovementSummary';
-import FlowchartVisualization from './FlowchartVisualization';
+import OptimizationResults from './OptimizationResults';
+import AnalysisResults from './AnalysisResults';
 
 const CodeOptimizer = () => {
   const [code, setCode] = useState(`function fibonacci(n) {
@@ -31,12 +26,6 @@ for (let i = 0; i < 10; i++) {
   const [activeView, setActiveView] = useState<"analysis" | "optimization" | null>(null);
   const [analysisResults, setAnalysisResults] = useState<AnalysisResult | null>(null);
   const [optimizationResults, setOptimizationResults] = useState<OptimizationResult | null>(null);
-  const [openSections, setOpenSections] = useState({
-    workflow: true,
-    metrics: true,
-    changes: true,
-    summary: true
-  });
 
   const handleOptimize = async () => {
     try {
@@ -49,10 +38,18 @@ for (let i = 0; i < 10; i++) {
       setOptimizationResults(results);
       setActiveView("optimization");
       
-      toast.success("Code optimized successfully!");
+      toast({
+        title: "Success",
+        description: "Code optimized successfully!",
+        variant: "default"
+      });
     } catch (error) {
       console.error("Optimization failed:", error);
-      toast.error("Failed to optimize code. Please try again.");
+      toast({
+        title: "Error",
+        description: "Failed to optimize code. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setIsOptimizing(false);
     }
@@ -68,10 +65,18 @@ for (let i = 0; i < 10; i++) {
       setAnalysisResults(results);
       setActiveView("analysis");
       
-      toast.success("Code analysis completed!");
+      toast({
+        title: "Success",
+        description: "Code analysis completed!",
+        variant: "default"
+      });
     } catch (error) {
       console.error("Analysis failed:", error);
-      toast.error("Failed to analyze code. Please try again.");
+      toast({
+        title: "Error",
+        description: "Failed to analyze code. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setIsAnalyzing(false);
     }
@@ -79,14 +84,11 @@ for (let i = 0; i < 10; i++) {
 
   const handleCopyOptimized = () => {
     navigator.clipboard.writeText(optimizedCode);
-    toast.success("Optimized code copied to clipboard!");
-  };
-
-  const toggleSection = (section: keyof typeof openSections) => {
-    setOpenSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
+    toast({
+      title: "Copied!",
+      description: "Optimized code copied to clipboard!",
+      variant: "default"
+    });
   };
 
   return (
@@ -188,107 +190,12 @@ for (let i = 0; i < 10; i++) {
           {/* Results Content */}
           <div className="mt-6">
             {activeView === "analysis" ? (
-              <CodeAnalysisResults results={analysisResults} className="p-2" />
+              <AnalysisResults analysisResults={analysisResults} />
             ) : (
-              <div className="flex flex-col gap-6 animate-fade-in">
-                {/* Optimized Code */}
-                <div className="h-[400px]">
-                  <CodeEditor
-                    title="Optimized Code"
-                    code={optimizationResults?.optimizedCode || optimizedCode}
-                    editable={false}
-                    diffLines={optimizationResults?.changedLines || []}
-                    diffType="added"
-                    onCopy={handleCopyOptimized}
-                    language="javascript"
-                  />
-                </div>
-                
-                {/* Flow Chart Visualization - Using the same component as analysis results */}
-                {optimizationResults?.optimized_code_flowchart && (
-                  <Collapsible open={openSections.workflow} onOpenChange={() => toggleSection('workflow')} className="w-full">
-                    <div className="flex justify-between items-center mb-2">
-                      <h3 className="text-sm font-medium">Code Flow Visualization</h3>
-                      <CollapsibleTrigger asChild>
-                        <Button variant="ghost" size="sm" className="p-0 h-8 w-8">
-                          <CircleArrowDown className={`h-5 w-5 transition-transform duration-200 ${openSections.workflow ? 'rotate-180' : ''}`} />
-                        </Button>
-                      </CollapsibleTrigger>
-                    </div>
-                    <CollapsibleContent className="transition-all duration-300">
-                      {/* Use the FlowchartVisualization component from analysis results */}
-                      <FlowchartVisualization workflow={optimizationResults.optimized_code_flowchart} />
-                    </CollapsibleContent>
-                  </Collapsible>
-                )}
-                
-                {/* Performance Metrics */}
-                {optimizationResults?.metrics && (
-                  <Collapsible open={openSections.metrics} onOpenChange={() => toggleSection('metrics')} className="w-full">
-                    <div className="flex justify-between items-center mb-2">
-                      <h3 className="text-sm font-medium">Performance Metrics</h3>
-                      <CollapsibleTrigger asChild>
-                        <Button variant="ghost" size="sm" className="p-0 h-8 w-8">
-                          <CircleArrowDown className={`h-5 w-5 transition-transform duration-200 ${openSections.metrics ? 'rotate-180' : ''}`} />
-                        </Button>
-                      </CollapsibleTrigger>
-                    </div>
-                    <CollapsibleContent className="transition-all duration-300">
-                      <MetricsDashboard 
-                        executionTime={{
-                          value: optimizationResults.improvement_percentages?.execution_time || optimizationResults.metrics.executionTime.value,
-                          label: "faster",
-                          improvement: true
-                        }}
-                        memoryUsage={{
-                          value: optimizationResults.improvement_percentages?.memory_usage || optimizationResults.metrics.memoryUsage.value,
-                          label: "less memory",
-                          improvement: true
-                        }}
-                        codeComplexity={{
-                          value: optimizationResults.improvement_percentages?.code_complexity || optimizationResults.metrics.codeComplexity.value,
-                          label: "complexity reduction",
-                          improvement: true
-                        }}
-                      />
-                    </CollapsibleContent>
-                  </Collapsible>
-                )}
-                
-                {/* Detailed Changes - Using the DetailedChanges component */}
-                {optimizationResults?.detailed_changes && (
-                  <Collapsible open={openSections.changes} onOpenChange={() => toggleSection('changes')} className="w-full">
-                    <div className="flex justify-between items-center mb-2">
-                      <h3 className="text-sm font-medium">Detailed Changes</h3>
-                      <CollapsibleTrigger asChild>
-                        <Button variant="ghost" size="sm" className="p-0 h-8 w-8">
-                          <CircleArrowDown className={`h-5 w-5 transition-transform duration-200 ${openSections.changes ? 'rotate-180' : ''}`} />
-                        </Button>
-                      </CollapsibleTrigger>
-                    </div>
-                    <CollapsibleContent className="transition-all duration-300">
-                      <DetailedChanges changes={optimizationResults.detailed_changes} />
-                    </CollapsibleContent>
-                  </Collapsible>
-                )}
-                
-                {/* Improvement Summary - Using the OptimizationImprovementSummary component */}
-                {optimizationResults?.improvement_summary && (
-                  <Collapsible open={openSections.summary} onOpenChange={() => toggleSection('summary')} className="w-full">
-                    <div className="flex justify-between items-center mb-2">
-                      <h3 className="text-sm font-medium">Improvement Summary</h3>
-                      <CollapsibleTrigger asChild>
-                        <Button variant="ghost" size="sm" className="p-0 h-8 w-8">
-                          <CircleArrowDown className={`h-5 w-5 transition-transform duration-200 ${openSections.summary ? 'rotate-180' : ''}`} />
-                        </Button>
-                      </CollapsibleTrigger>
-                    </div>
-                    <CollapsibleContent className="transition-all duration-300">
-                      <OptimizationImprovementSummary content={optimizationResults.improvement_summary} />
-                    </CollapsibleContent>
-                  </Collapsible>
-                )}
-              </div>
+              <OptimizationResults 
+                optimizationResults={optimizationResults}
+                handleCopyOptimized={handleCopyOptimized}
+              />
             )}
           </div>
         </div>

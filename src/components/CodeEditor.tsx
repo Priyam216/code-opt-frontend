@@ -1,41 +1,42 @@
 
-import React, { useRef, useEffect } from 'react';
-import Editor, { Monaco } from '@monaco-editor/react';
+import React, { useRef } from 'react';
+import Editor from '@monaco-editor/react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
 
 interface CodeEditorProps {
-  title: string;
   code: string;
+  language?: string;
+  title?: string;
   editable?: boolean;
   diffLines?: number[];
   diffType?: 'added' | 'removed' | 'highlight';
-  onCodeChange?: (code: string) => void;
-  onCopy?: () => void;
   className?: string;
-  language?: string;
+  onCodeChange?: (value: string) => void;
+  onCopy?: () => void;
 }
 
 const CodeEditor: React.FC<CodeEditorProps> = ({
-  title,
   code,
+  language = 'javascript',
+  title = 'Code Editor',
   editable = false,
   diffLines = [],
-  diffType,
+  diffType = 'added',
+  className = '',
   onCodeChange,
-  onCopy,
-  className = "",
-  language = "javascript",
+  onCopy
 }) => {
   const editorRef = useRef<any>(null);
-
-  const handleEditorDidMount = (editor: any, monaco: Monaco) => {
+  
+  const handleEditorDidMount = (editor: any) => {
     editorRef.current = editor;
     
-    // Apply decorations for diff lines if needed
-    if (diffLines.length > 0 && diffType) {
-      const decorations = diffLines.map(lineIndex => ({
-        range: new monaco.Range(lineIndex + 1, 1, lineIndex + 1, 1),
+    if (diffLines.length > 0) {
+      const model = editor.getModel();
+      const decorations = diffLines.map((lineNumber) => ({
+        range: new monaco.Range(lineNumber, 1, lineNumber, 1),
         options: {
           isWholeLine: true,
           className: `diff-${diffType}`,
@@ -45,74 +46,58 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
       
       editor.createDecorationsCollection(decorations);
     }
-    
-    // Handle read-only state
-    if (!editable) {
-      editor.updateOptions({ readOnly: true });
-    }
-    
-    // Force dark theme
-    monaco.editor.setTheme("vs-dark");
   };
-
-  const handleChange = (value: string | undefined) => {
-    if (onCodeChange && value !== undefined) {
-      onCodeChange(value);
-    }
-  };
-
-  const handleCopy = () => {
-    if (editorRef.current) {
-      const code = editorRef.current.getValue();
+  
+  const handleCopyClick = () => {
+    if (onCopy) {
+      onCopy();
+    } else {
       navigator.clipboard.writeText(code);
-      if (onCopy) {
-        onCopy();
-      }
     }
   };
   
   return (
-    <div className={`flex flex-col h-full bg-editor-bg rounded-md border border-border shadow-md ${className}`}>
-      <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-muted/40">
-        <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
-        <div className="flex items-center space-x-2">
+    <Card className={`overflow-hidden ${className}`}>
+      <CardHeader className="py-3 px-4 border-b border-border flex flex-row items-center justify-between">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+        {!editable && (
           <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={handleCopy}
-            className="h-8 w-8 hover:bg-muted/50"
-            title="Copy code"
+            onClick={handleCopyClick} 
+            size="sm" 
+            variant="ghost"
+            className="h-8 px-2 text-muted-foreground hover:text-foreground"
           >
-            <Copy className="h-4 w-4" />
+            <Copy className="h-4 w-4 mr-1" />
+            <span className="text-xs">Copy</span>
           </Button>
-        </div>
-      </div>
-      <div className="relative flex-grow overflow-hidden">
+        )}
+      </CardHeader>
+      <CardContent className="p-0 h-[calc(100%-40px)]">
         <Editor
           height="100%"
-          defaultLanguage={language}
-          defaultValue={code}
+          language={language}
           value={code}
-          onChange={handleChange}
-          onMount={handleEditorDidMount}
-          theme="vs-dark" // Always use dark theme
           options={{
-            minimap: { enabled: true },
+            minimap: { enabled: false },
             scrollBeyondLastLine: false,
-            fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-            fontSize: 13,
-            lineNumbers: "on",
-            folding: true,
-            suggest: { showMethods: true },
-            wordWrap: "on",
-            theme: "vs-dark",
-            bracketPairColorization: { enabled: true },
+            fontSize: 14,
+            wordWrap: 'on',
+            readOnly: !editable,
+            lineNumbers: 'on',
+            renderLineHighlight: 'all',
+            fontFamily: '"JetBrains Mono", "Fira Code", monospace',
             automaticLayout: true,
+            scrollbar: {
+              verticalScrollbarSize: 8,
+              horizontalScrollbarSize: 8,
+            }
           }}
+          onChange={value => onCodeChange && onCodeChange(value || '')}
+          onMount={handleEditorDidMount}
           className="monaco-editor-container"
         />
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
