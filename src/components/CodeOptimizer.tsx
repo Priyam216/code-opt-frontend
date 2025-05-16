@@ -204,7 +204,7 @@ for (let i = 0; i < 10; i++) {
                   />
                 </div>
                 
-                {/* Flow Chart Visualization - Now uses the same component as analysis results */}
+                {/* Flow Chart Visualization - Using the same component as analysis results */}
                 {optimizationResults?.optimized_code_flowchart && (
                   <Collapsible open={openSections.workflow} onOpenChange={() => toggleSection('workflow')} className="w-full">
                     <div className="flex justify-between items-center mb-2">
@@ -236,17 +236,17 @@ for (let i = 0; i < 10; i++) {
                     <CollapsibleContent className="transition-all duration-300">
                       <MetricsDashboard 
                         executionTime={{
-                          value: optimizationResults.improvement_percentages?.execution_time || 0,
+                          value: optimizationResults.improvement_percentages?.execution_time || optimizationResults.metrics.executionTime.value,
                           label: "faster",
                           improvement: true
                         }}
                         memoryUsage={{
-                          value: optimizationResults.improvement_percentages?.memory_usage || 0,
+                          value: optimizationResults.improvement_percentages?.memory_usage || optimizationResults.metrics.memoryUsage.value,
                           label: "less memory",
                           improvement: true
                         }}
                         codeComplexity={{
-                          value: optimizationResults.improvement_percentages?.code_complexity || 0,
+                          value: optimizationResults.improvement_percentages?.code_complexity || optimizationResults.metrics.codeComplexity.value,
                           label: "complexity reduction",
                           improvement: true
                         }}
@@ -255,7 +255,7 @@ for (let i = 0; i < 10; i++) {
                   </Collapsible>
                 )}
                 
-                {/* Detailed Changes - Now using the same styling as optimization opportunities in analysis */}
+                {/* Detailed Changes - Using the DetailedChanges component */}
                 {optimizationResults?.detailed_changes && (
                   <Collapsible open={openSections.changes} onOpenChange={() => toggleSection('changes')} className="w-full">
                     <div className="flex justify-between items-center mb-2">
@@ -272,7 +272,7 @@ for (let i = 0; i < 10; i++) {
                   </Collapsible>
                 )}
                 
-                {/* Improvement Summary - Now using the same styling as functionality analysis */}
+                {/* Improvement Summary - Using the OptimizationImprovementSummary component */}
                 {optimizationResults?.improvement_summary && (
                   <Collapsible open={openSections.summary} onOpenChange={() => toggleSection('summary')} className="w-full">
                     <div className="flex justify-between items-center mb-2">
