@@ -1,299 +1,293 @@
-
-import React, { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Search, Zap } from "lucide-react";
-import CodeEditor from './CodeEditor';
-import MetricsDashboard from './MetricsDashboard';
+// src/components/CodeOptimizer.tsx
+// Refactored to use page-based routing instead of state-based views
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from "@/components/ui/sonner";
-import CodeAnalysisResults from './CodeAnalysisResults';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { analyzeCode, optimizeCode, AnalysisResult, OptimizationResult } from '@/lib/api';
-import { CircleArrowDown } from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import DetailedChanges from './DetailedChanges';
-import OptimizationImprovementSummary from './OptimizationImprovementSummary';
-import FlowchartVisualization from './FlowchartVisualization';
+import EmptyState from './EmptyState';
+import LanguageSelectionModal from './convert/LanguageSelectionModal';
+import LanguageWarningBanner from './convert/LanguageWarningBanner';
+import {
+  analyzeCode,
+  optimizeCode,
+  documentCode,
+  convertCode,
+} from '@/api/service';
 
-const CodeOptimizer = () => {
-  const [code, setCode] = useState(`function fibonacci(n) {
-  if (n <= 1) return n;
-  return fibonacci(n-1) + fibonacci(n-2);
-}
+const CodeOptimizer: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
 
-for (let i = 0; i < 10; i++) {
-  console.log(fibonacci(i));
-}`);
-  
-  const [optimizedCode, setOptimizedCode] = useState('');
+  // Core state - only what's needed for input page
+  const [code, setCode] = useState("");
+
+  // Loading states for each operation
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [activeView, setActiveView] = useState<"analysis" | "optimization" | null>(null);
-  const [analysisResults, setAnalysisResults] = useState<AnalysisResult | null>(null);
-  const [optimizationResults, setOptimizationResults] = useState<OptimizationResult | null>(null);
-  const [openSections, setOpenSections] = useState({
-    workflow: true,
-    metrics: true,
-    changes: true,
-    summary: true
-  });
+  const [isConverting, setIsConverting] = useState(false);
+  const [isDocumenting, setIsDocumenting] = useState(false);
 
+  // Language management states
+  const [selectedLanguage, setSelectedLanguage] = useState<'r' | 'python' | 'sas'>('python');
+  const [sourceLanguage, setSourceLanguage] = useState<'r' | 'python' | 'sas'>('python');
+  const [detectedLanguage, setDetectedLanguage] = useState<'r' | 'python' | 'sas'>('python');
+
+  // Modal and language validation states
+  const [showConvertModal, setShowConvertModal] = useState(false);
+  const [selectedTargetLanguage, setSelectedTargetLanguage] = useState<'python' | 'r' | 'sas' | null>(null);
+  const [showLanguageWarning, setShowLanguageWarning] = useState(false);
+  const [detectedInvalidLanguage, setDetectedInvalidLanguage] = useState<string>('');
+
+  // Function to validate if language is supported for conversion
+  const isSupportedLanguage = (language: string): language is 'python' | 'r' | 'sas' => {
+    return ['python', 'r', 'sas'].includes(language.toLowerCase());
+  };
+
+  // Handle detected language changes from CodeEditor
+  const handleDetectedLanguageChange = (detectedLang: 'r' | 'python' | 'sas') => {
+    console.log('Language detected in CodeOptimizer:', detectedLang);
+    setSourceLanguage(detectedLang);
+    setDetectedLanguage(detectedLang);
+    
+    // Hide warning if the detected language is supported
+    if (isSupportedLanguage(detectedLang)) {
+      setShowLanguageWarning(false);
+    }
+  };
+
+  // Language change handler with validation
+  const handleSourceLanguageChange = (lang: 'r' | 'python' | 'sas') => {
+    console.log('Manual language change to:', lang);
+    setSourceLanguage(lang);
+    
+    // Hide warning if user selects a supported language
+    if (isSupportedLanguage(lang)) {
+      setShowLanguageWarning(false);
+    }
+  };
+
+  // UPDATED HANDLERS - Navigate instead of setting state
   const handleOptimize = async () => {
+    if (!code.trim()) {
+      toast.error('Please enter some code to optimize');
+      return;
+    }
+
+    setIsOptimizing(true);
     try {
-      setIsOptimizing(true);
-      
-      // Call the API to optimize the code
       const results = await optimizeCode(code);
+      console.log('Optimization results:', results);
       
-      setOptimizedCode(results.optimizedCode);
-      setOptimizationResults(results);
-      setActiveView("optimization");
+      // Navigate to results page with data
+      navigate('/results/optimize', {
+        state: {
+          results,
+          originalCode: code,
+          sourceLanguage
+        }
+      });
       
-      toast.success("Code optimized successfully!");
+      toast.success('Code optimized successfully!');
     } catch (error) {
-      console.error("Optimization failed:", error);
-      toast.error("Failed to optimize code. Please try again.");
+      console.error('Optimization error:', error);
+      toast.error('Failed to optimize code. Please try again.');
     } finally {
       setIsOptimizing(false);
     }
   };
 
   const handleAnalyze = async () => {
+    if (!code.trim()) {
+      toast.error('Please enter some code to analyze');
+      return;
+    }
+
+    setIsAnalyzing(true);
     try {
-      setIsAnalyzing(true);
-      
-      // Call the API to analyze the code
       const results = await analyzeCode(code);
+      console.log('Analysis results:', results);
       
-      setAnalysisResults(results);
-      setActiveView("analysis");
+      // Navigate to results page with data
+      navigate('/results/analyze', {
+        state: {
+          results,
+          originalCode: code,
+          sourceLanguage
+        }
+      });
       
-      toast.success("Code analysis completed!");
+      toast.success('Code analysis completed!');
     } catch (error) {
-      console.error("Analysis failed:", error);
-      toast.error("Failed to analyze code. Please try again.");
+      console.error('Analysis error:', error);
+      toast.error('Failed to analyze code. Please try again.');
     } finally {
       setIsAnalyzing(false);
     }
   };
 
-  const handleCopyOptimized = () => {
-    navigator.clipboard.writeText(optimizedCode);
-    toast.success("Optimized code copied to clipboard!");
+  const handleDocument = async () => {
+    if (!code.trim()) {
+      toast.error('Please enter some code to document');
+      return;
+    }
+
+    setIsDocumenting(true);
+    try {
+      const result = await documentCode(code);
+      console.log('Documentation results:', result);
+      
+      // Navigate to results page with data
+      navigate('/results/document', {
+        state: {
+          results: result,
+          originalCode: code,
+          sourceLanguage
+        }
+      });
+      
+      toast.success('Documentation generated successfully!');
+    } catch (error) {
+      console.error('Documentation error:', error);
+      toast.error('Failed to generate documentation. Please try again.');
+    } finally {
+      setIsDocumenting(false);
+    }
   };
 
-  const toggleSection = (section: keyof typeof openSections) => {
-    setOpenSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
+  // Handle convert - opens modal instead of direct conversion
+  const handleConvertClick = () => {
+    if (!code.trim()) {
+      toast.error('Please enter some code to convert');
+      return;
+    }
+
+    console.log('Convert clicked with sourceLanguage:', sourceLanguage);
+    
+    // Check if source language is supported
+    if (!isSupportedLanguage(sourceLanguage)) {
+      setDetectedInvalidLanguage(sourceLanguage);
+      setShowLanguageWarning(true);
+      toast.error('Conversion only supports Python, R, and SAS as input languages.');
+      return;
+    }
+
+    // Open language selection modal
+    setSelectedTargetLanguage(null);
+    setShowConvertModal(true);
   };
+
+  // Handle actual conversion after language selection
+  const handleConvertToLanguage = async (targetLanguage: 'python' | 'r' | 'sas') => {
+    setIsConverting(true);
+    try {
+      const result = await convertCode(code, sourceLanguage, targetLanguage);
+      console.log('Conversion results:', result);
+      
+      // Navigate to results page with data
+      navigate('/results/convert', {
+        state: {
+          results: result,
+          originalCode: code,
+          sourceLanguage,
+          targetLanguage
+        }
+      });
+      
+      setShowConvertModal(false);
+      setSelectedTargetLanguage(null);
+      toast.success(`Code converted to ${targetLanguage.toUpperCase()} successfully!`);
+    } catch (error) {
+      console.error('Conversion error:', error);
+      toast.error('Failed to convert code. Please try again.');
+    } finally {
+      setIsConverting(false);
+    }
+  };
+
+  // Handle modal close
+  const handleCloseConvertModal = () => {
+    if (!isConverting) {
+      setShowConvertModal(false);
+      setSelectedTargetLanguage(null);
+    }
+  };
+
+  // Handle target language selection in modal
+  const handleTargetLanguageSelect = (language: 'python' | 'r' | 'sas') => {
+    setSelectedTargetLanguage(language);
+  };
+
+  // Check for preserved code from navigation state (when returning from results)
+  useEffect(() => {
+    const state = location.state as any;
+    if (state?.preserveCode && state.preserveCode !== code) {
+      setCode(state.preserveCode);
+    }
+    if (state?.preserveLanguage && state.preserveLanguage !== sourceLanguage) {
+      setSourceLanguage(state.preserveLanguage);
+      setDetectedLanguage(state.preserveLanguage);
+    }
+  }, [location.state]);
+
+  // Debug logging for state changes
+  useEffect(() => {
+    console.log('CodeOptimizer state:', {
+      sourceLanguage,
+      detectedLanguage,
+      showConvertModal,
+      selectedTargetLanguage
+    });
+  }, [sourceLanguage, detectedLanguage, showConvertModal, selectedTargetLanguage]);
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Full-size VS Code-like Editor */}
-      <div className="h-[500px] w-full">
-        <CodeEditor
-          title="Code Editor"
-          code={code}
-          editable={true}
-          onCodeChange={setCode}
-          className="h-full"
-          language="javascript"
-        />
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex flex-wrap justify-center gap-4">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                size="lg" 
-                variant="secondary"
-                onClick={handleAnalyze} 
-                disabled={isAnalyzing || !code}
-                className="px-8 transition-all duration-300 min-w-[180px]"
-              >
-                {isAnalyzing ? (
-                  <span className="flex items-center gap-2">
-                    <div className="h-4 w-4 rounded-full border-2 border-t-transparent border-white animate-spin"></div>
-                    Analyzing...
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    <Search className="h-4 w-4" />
-                    Analyze Code
-                  </span>
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="bg-popover border-border">
-              <p className="text-sm">Analyze the current code for optimization opportunities</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-
-        <Button 
-          size="lg" 
-          onClick={handleOptimize} 
-          disabled={isOptimizing || !code}
-          className="px-8 transition-all duration-300 min-w-[180px]"
-        >
-          {isOptimizing ? (
-            <span className="flex items-center gap-2">
-              <div className="h-4 w-4 rounded-full border-2 border-t-transparent border-white animate-spin"></div>
-              Optimizing...
-            </span>
-          ) : (
-            <span className="flex items-center gap-2">
-              <Zap className="h-4 w-4" />
-              Run Optimization
-            </span>
-          )}
-        </Button>
-      </div>
-
-      {/* Toggle Switch for Results */}
-      {activeView && (
-        <div className="mt-2 animate-fade-in">
-          <div className="border-b border-border">
-            <ToggleGroup 
-              type="single" 
-              value={activeView} 
-              onValueChange={(value) => {
-                if (value) setActiveView(value as "analysis" | "optimization");
-              }}
-              className="justify-start w-full"
-            >
-              <ToggleGroupItem 
-                value="analysis" 
-                className={`px-6 py-3 rounded-none transition-all border-b-2 ${activeView === 'analysis' 
-                  ? 'border-primary text-primary' 
-                  : 'border-transparent text-muted-foreground'}`}
-              >
-                Analysis Results
-              </ToggleGroupItem>
-              <ToggleGroupItem 
-                value="optimization" 
-                className={`px-6 py-3 rounded-none transition-all border-b-2 ${activeView === 'optimization' 
-                  ? 'border-primary text-primary' 
-                  : 'border-transparent text-muted-foreground'}`}
-              >
-                Optimization Results
-              </ToggleGroupItem>
-            </ToggleGroup>
-          </div>
-
-          {/* Results Content */}
-          <div className="mt-6">
-            {activeView === "analysis" ? (
-              <CodeAnalysisResults results={analysisResults} className="p-2" />
-            ) : (
-              <div className="flex flex-col gap-6 animate-fade-in">
-                {/* Optimized Code */}
-                <div className="h-[400px]">
-                  <CodeEditor
-                    title="Optimized Code"
-                    code={optimizationResults?.optimizedCode || optimizedCode}
-                    editable={false}
-                    diffLines={optimizationResults?.changedLines || []}
-                    diffType="added"
-                    onCopy={handleCopyOptimized}
-                    language="javascript"
-                  />
-                </div>
-                
-                {/* Flow Chart Visualization - Using the same component as analysis results */}
-                {optimizationResults?.optimized_code_flowchart && (
-                  <Collapsible open={openSections.workflow} onOpenChange={() => toggleSection('workflow')} className="w-full">
-                    <div className="flex justify-between items-center mb-2">
-                      <h3 className="text-sm font-medium">Code Flow Visualization</h3>
-                      <CollapsibleTrigger asChild>
-                        <Button variant="ghost" size="sm" className="p-0 h-8 w-8">
-                          <CircleArrowDown className={`h-5 w-5 transition-transform duration-200 ${openSections.workflow ? 'rotate-180' : ''}`} />
-                        </Button>
-                      </CollapsibleTrigger>
-                    </div>
-                    <CollapsibleContent className="transition-all duration-300">
-                      {/* Use the FlowchartVisualization component from analysis results */}
-                      <FlowchartVisualization workflow={optimizationResults.optimized_code_flowchart} />
-                    </CollapsibleContent>
-                  </Collapsible>
-                )}
-                
-                {/* Performance Metrics */}
-                {optimizationResults?.metrics && (
-                  <Collapsible open={openSections.metrics} onOpenChange={() => toggleSection('metrics')} className="w-full">
-                    <div className="flex justify-between items-center mb-2">
-                      <h3 className="text-sm font-medium">Performance Metrics</h3>
-                      <CollapsibleTrigger asChild>
-                        <Button variant="ghost" size="sm" className="p-0 h-8 w-8">
-                          <CircleArrowDown className={`h-5 w-5 transition-transform duration-200 ${openSections.metrics ? 'rotate-180' : ''}`} />
-                        </Button>
-                      </CollapsibleTrigger>
-                    </div>
-                    <CollapsibleContent className="transition-all duration-300">
-                      <MetricsDashboard 
-                        executionTime={{
-                          value: optimizationResults.improvement_percentages?.execution_time || optimizationResults.metrics.executionTime.value,
-                          label: "faster",
-                          improvement: true
-                        }}
-                        memoryUsage={{
-                          value: optimizationResults.improvement_percentages?.memory_usage || optimizationResults.metrics.memoryUsage.value,
-                          label: "less memory",
-                          improvement: true
-                        }}
-                        codeComplexity={{
-                          value: optimizationResults.improvement_percentages?.code_complexity || optimizationResults.metrics.codeComplexity.value,
-                          label: "complexity reduction",
-                          improvement: true
-                        }}
-                      />
-                    </CollapsibleContent>
-                  </Collapsible>
-                )}
-                
-                {/* Detailed Changes - Using the DetailedChanges component */}
-                {optimizationResults?.detailed_changes && (
-                  <Collapsible open={openSections.changes} onOpenChange={() => toggleSection('changes')} className="w-full">
-                    <div className="flex justify-between items-center mb-2">
-                      <h3 className="text-sm font-medium">Detailed Changes</h3>
-                      <CollapsibleTrigger asChild>
-                        <Button variant="ghost" size="sm" className="p-0 h-8 w-8">
-                          <CircleArrowDown className={`h-5 w-5 transition-transform duration-200 ${openSections.changes ? 'rotate-180' : ''}`} />
-                        </Button>
-                      </CollapsibleTrigger>
-                    </div>
-                    <CollapsibleContent className="transition-all duration-300">
-                      <DetailedChanges changes={optimizationResults.detailed_changes} />
-                    </CollapsibleContent>
-                  </Collapsible>
-                )}
-                
-                {/* Improvement Summary - Using the OptimizationImprovementSummary component */}
-                {optimizationResults?.improvement_summary && (
-                  <Collapsible open={openSections.summary} onOpenChange={() => toggleSection('summary')} className="w-full">
-                    <div className="flex justify-between items-center mb-2">
-                      <h3 className="text-sm font-medium">Improvement Summary</h3>
-                      <CollapsibleTrigger asChild>
-                        <Button variant="ghost" size="sm" className="p-0 h-8 w-8">
-                          <CircleArrowDown className={`h-5 w-5 transition-transform duration-200 ${openSections.summary ? 'rotate-180' : ''}`} />
-                        </Button>
-                      </CollapsibleTrigger>
-                    </div>
-                    <CollapsibleContent className="transition-all duration-300">
-                      <OptimizationImprovementSummary content={optimizationResults.improvement_summary} />
-                    </CollapsibleContent>
-                  </Collapsible>
-                )}
-              </div>
-            )}
-          </div>
+    <>
+      {/* Language Warning Banner */}
+      {showLanguageWarning && (
+        <div className="fixed top-4 left-4 right-4 z-40">
+          <LanguageWarningBanner
+            isVisible={showLanguageWarning}
+            onDismiss={() => setShowLanguageWarning(false)}
+            detectedLanguage={detectedInvalidLanguage}
+          />
         </div>
       )}
-    </div>
+
+      {/* Language Selection Modal */}
+      <LanguageSelectionModal
+        isOpen={showConvertModal}
+        onClose={handleCloseConvertModal}
+        onConvert={handleConvertToLanguage}
+        sourceLanguage={sourceLanguage}
+        isConverting={isConverting}
+        selectedLanguage={selectedTargetLanguage}
+        onLanguageSelect={handleTargetLanguageSelect}
+      />
+
+      {/* INPUT PAGE - Always visible now */}
+      <EmptyState
+        code={code}
+        onCodeChange={setCode}
+        onAnalyze={handleAnalyze}
+        onOptimize={handleOptimize}
+        onConvert={handleConvertClick}
+        onDocument={handleDocument}
+        isAnalyzing={isAnalyzing}
+        isOptimizing={isOptimizing}
+        isConverting={isConverting}
+        isDocumenting={isDocumenting}
+        analysisResults={null}
+        optimizationResults={null}
+        convertResult={null}
+        documentResult={null}
+        selectedLanguage={selectedLanguage}
+        onLanguageChange={setSelectedLanguage}
+        activeView={null}
+        setActiveView={() => {}} // No-op function since we don't use activeView anymore
+        sourceLanguage={sourceLanguage}
+        onSourceLanguageChange={handleSourceLanguageChange}
+        onDetectedLanguageChange={handleDetectedLanguageChange}
+        onResetResults={() => {}} // No-op function since we don't manage results state
+      />
+    </>
   );
 };
 

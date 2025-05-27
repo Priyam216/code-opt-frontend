@@ -9,8 +9,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
-import { AnalysisResult } from '@/lib/api';
-import LanguageBadge from './LanguageBadge';
+import { AnalysisResult } from '@/api/service';
 import FlowchartVisualization from './FlowchartVisualization';
 import ScoreCardDisplay from './ScoreCardDisplay';
 import FunctionalityAnalysis from './FunctionalityAnalysis';
@@ -43,12 +42,7 @@ const CodeAnalysisResults: React.FC<CodeAnalysisResultsProps> = ({ results, clas
   
   return (
     <div className={`space-y-6 ${className} animate-fade-in`}>
-      {/* Language Detection */}
-      {detectedLanguage && (
-        <div className="flex justify-between items-center">
-          <LanguageBadge language={detectedLanguage} />
-        </div>
-      )}
+      
       
       {/* Workflow Visualization */}
       {workflow && (

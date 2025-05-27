@@ -69,8 +69,19 @@ export default {
 					highlight: 'rgba(62, 185, 145, 0.1)',
 					added: 'rgba(46, 160, 67, 0.15)',
 					removed: 'rgba(248, 81, 73, 0.15)'
-				}
+				},
+				brand: {
+					50:  '#f5f7ff',
+					100: '#dfe4ff',
+					200: '#b3bfff',
+					500: '#5f6eff',
+					700: '#3f49ff',
+				  }
 			},
+			
+			backgroundImage: {
+				'page-gradient': 'linear-gradient(90deg,rgba(23, 11, 59, 1) 0%, rgba(0, 0, 0, 1) 100%)',
+			  },
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
