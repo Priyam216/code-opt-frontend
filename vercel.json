@@ -3,9 +3,6 @@
       "env": {
         "NPM_FLAGS": "--legacy-peer-deps"
       }
-    },
-    "scripts": {
-      "install": "npm install --legacy-peer-deps"
     }
   }
   
