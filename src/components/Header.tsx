@@ -90,7 +90,7 @@ const Header: React.FC = () => {
       <div className="max-w-7xl mx-auto flex justify-between items-center">
         <Link to="/" className="glass-logo">
           <Code className="h-5 w-5" />
-          <span>agenticAI</span>
+          <span>optqo</span>
         </Link>
         
         <div className="flex items-center space-x-4">

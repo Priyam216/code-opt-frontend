@@ -25,7 +25,7 @@ export default function LandingPage() {
                 transition={{ delay: 0.3, duration: 0.8, ease: "easeInOut" }}
               >
                 <h1 className="text-3xl md:text-7xl font-bold text-white">
-                  Agentic AI: Next-Level Analytics
+                optqo: Next-Level Optimisation
                 </h1>
                 <p className="mt-4 font-extralight text-base md:text-4xl text-neutral-200">
                   Automate. Integrate. Optimize.

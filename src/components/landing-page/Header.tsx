@@ -23,7 +23,7 @@ export default function Header() {
     >
       <div className="flex items-center justify-between w-full sm:w-auto">
         <div className="text-white text-xl font-bold">
-          agenticAI
+        optqo
         </div>
         <button
           className="sm:hidden text-white text-2xl focus:outline-none"
