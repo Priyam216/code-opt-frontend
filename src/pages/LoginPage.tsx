@@ -232,11 +232,11 @@ const LoginPage: React.FC = () => {
   <span>Continue with Google</span>
 </button>
 
-<div className="oauth-divider">
+{/* <div className="oauth-divider">
   <span>or continue with email</span>
-</div>
+</div> */}
         
-        <form onSubmit={handleSubmit}>
+        {/* <form onSubmit={handleSubmit}>
           <div className="glass-input-group">
             <label className="glass-label">Username</label>
             <div className="glass-input-wrapper">
@@ -275,7 +275,11 @@ const LoginPage: React.FC = () => {
           <div className="signup-link">
             Don't have an account? <a href="/signup">Sign up</a>
           </div>
-        </form>
+        </form> */}
+
+        <div className="signup-link">
+          Don't have an account? <a href="/signup">Sign up</a>
+        </div>
       </div>
     </div>
     </BeamsBackground>
