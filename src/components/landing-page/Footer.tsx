@@ -11,7 +11,7 @@ export default function Footer() {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <span className="text-xl font-bold text-white">
-                AgenticAI
+                optqo
               </span>
             </div>
             <p className="text-white/70 mb-4">
