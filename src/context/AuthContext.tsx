@@ -1,8 +1,7 @@
 // File: src/context/AuthContext.tsx
 // Updated with Google OAuth functionality
 
-import React, { createContext, useState, useEffect, ReactNode, useContext } from 'react';
-import {
+import React, { createContext, useState, useEffect, ReactNode, useContext, useRef } from 'react';import {
   User,
   fetchCurrentUser,
   login as loginApi,
@@ -35,8 +34,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Computed property for authentication status
   const isAuthenticated = user !== null;
 
-  // Refresh the current user from the API
-  const refreshUser = async () => {
+  // Add a ref to track ongoing requests
+const refreshUserRequestRef = useRef<Promise<void> | null>(null);
+
+// Refresh the current user from the API
+const refreshUser = async () => {
+  // If there's already a request in progress, return that promise
+  if (refreshUserRequestRef.current) {
+    return refreshUserRequestRef.current;
+  }
+
+  const requestPromise = (async () => {
     try {
       const response = await fetchCurrentUser();
       if (response.data.status === 'success') {
@@ -47,8 +55,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error('Failed to refresh user:', error);
       setUser(null);
+    } finally {
+      refreshUserRequestRef.current = null;
     }
-  };
+  })();
+
+  refreshUserRequestRef.current = requestPromise;
+  return requestPromise;
+};
 
   // Login method for local authentication
   const login = async (username: string, password: string) => {
@@ -111,19 +125,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Check authentication status on mount and periodically
-  const checkAuth = async () => {
-    try {
-      const response = await checkAuthStatus();
-      if (response.data.authenticated) {
-        await refreshUser();
-      } else {
-        setUser(null);
-      }
-    } catch (error) {
-      console.error('Auth check failed:', error);
-      setUser(null);
-    }
-  };
+const checkAuth = async () => {
+  try {
+    // Just call refreshUser - if it fails, user is not authenticated
+    await refreshUser();
+  } catch (error) {
+    console.error('Auth check failed:', error);
+    setUser(null);
+  }
+};
 
   // On mount, try to fetch the user
   useEffect(() => {
@@ -142,28 +152,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     initializeAuth();
   }, []);
 
-  // Handle focus events to refresh user data when tab becomes active
-  useEffect(() => {
-    const handleFocus = () => {
-      if (!loading && user) {
+  // Handle focus events to refresh user data when tab becomes active (with debouncing)
+useEffect(() => {
+  let focusTimeout: NodeJS.Timeout;
+  
+  const handleFocus = () => {
+    if (!loading && user) {
+      // Debounce focus events - only refresh if tab was inactive for more than 30 seconds
+      clearTimeout(focusTimeout);
+      focusTimeout = setTimeout(() => {
         refreshUser();
-      }
-    };
+      }, 1000); // Wait 1 second after focus to avoid rapid calls
+    }
+  };
 
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, [loading, user]);
+  window.addEventListener('focus', handleFocus);
+  return () => {
+    window.removeEventListener('focus', handleFocus);
+    clearTimeout(focusTimeout);
+  };
+}, [loading, user]);
 
-  // Periodic auth check (optional - every 5 minutes)
-  useEffect(() => {
-    if (!user) return;
+  // Periodic auth check (optional - every 20 minutes)
+useEffect(() => {
+  if (!user) return;
 
-    const interval = setInterval(() => {
-      checkAuth();
-    }, 5 * 60 * 1000); // 5 minutes
+  const interval = setInterval(() => {
+    checkAuth();
+  }, 20 * 60 * 1000); // 20 minutes
 
-    return () => clearInterval(interval);
-  }, [user]);
+  return () => clearInterval(interval);
+}, [user]);
 
   const contextValue: AuthContextType = {
     user,
